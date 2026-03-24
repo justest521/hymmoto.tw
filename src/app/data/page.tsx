@@ -23,7 +23,7 @@ const brandMap: Record<string, string> = {
   'CFMOTO': 'CFMOTO', 'INDIAN': 'INDIAN', 'MOTO GUZZI': 'MOTOGUZZI',
   'MV AGUSTA': 'MVAGUSTA', 'GAS GAS': 'GAS GAS', 'CPI': 'CPI',
   'Benelli': 'BENELLI', 'BRIXTON': 'BRIXTON', '哈特佛': 'HARTFORD',
-  'HARLEY-DAVIDSON': 'HARLEY-D',
+  'HARLEY-DAVIDSON': 'HARLEY-DAVIDSON',
 }
 
 interface BrandData { name: string; share: number; sales: number }
@@ -232,7 +232,7 @@ const DataPage: React.FC = () => {
             </div>
             <div style={{ ...mono, fontSize: '13px', whiteSpace: 'pre', lineHeight: '1.8' }}>
               {brands.map((b, i) => (
-                <div key={i}>{`  ${b.name.padEnd(16)} ${bar(b.share, maxShare, 20, b.sales > 0)} ${`${b.share}%`.padStart(6)}  (${b.sales.toLocaleString().padStart(6)})`}</div>
+                <div key={i}>{`  ${b.name.padEnd(18)} ${bar(b.share, maxShare, 20, b.sales > 0)} ${`${b.share}%`.padStart(6)}  (${b.sales.toLocaleString().padStart(6)})`}</div>
               ))}
             </div>
           </div>
