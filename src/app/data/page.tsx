@@ -4,9 +4,10 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
 
-function bar(value: number, max: number, width: number = 20): string {
+function bar(value: number, max: number, width: number = 20, hasData: boolean = false): string {
   if (max === 0) return '░'.repeat(width)
-  const filled = Math.round((value / max) * width)
+  const raw = Math.round((value / max) * width)
+  const filled = hasData && value > 0 ? Math.max(1, raw) : Math.min(width, Math.max(0, raw))
   const empty = width - filled
   return '█'.repeat(filled) + '░'.repeat(empty)
 }
@@ -231,7 +232,7 @@ const DataPage: React.FC = () => {
             </div>
             <div style={{ ...mono, fontSize: '13px', whiteSpace: 'pre', lineHeight: '1.8' }}>
               {brands.map((b, i) => (
-                <div key={i}>{`  ${b.name.padEnd(16)} ${bar(b.share, maxShare, 20)} ${`${b.share}%`.padStart(6)}  (${b.sales.toLocaleString().padStart(6)})`}</div>
+                <div key={i}>{`  ${b.name.padEnd(16)} ${bar(b.share, maxShare, 20, b.sales > 0)} ${`${b.share}%`.padStart(6)}  (${b.sales.toLocaleString().padStart(6)})`}</div>
               ))}
             </div>
           </div>
