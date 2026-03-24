@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
+import VehicleVisual from '@/components/VehicleVisual';
 
 interface Vehicle {
   id: number;
@@ -215,15 +216,25 @@ const BrandPage = () => {
                     (e.currentTarget as HTMLElement).style.boxShadow = 'none';
                   }}
                 >
-                  {/* Image placeholder */}
+                  {/* Dynamic SVG Visual */}
                   <div style={{
                     width: '100%', height: '120px',
-                    background: `linear-gradient(135deg, ${COLORS.border} 0%, ${COLORS.card} 100%)`,
+                    background: `linear-gradient(135deg, ${COLORS.border}40 0%, ${COLORS.card} 100%)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     borderRadius: '3px', marginBottom: '12px',
-                    fontSize: '24px', color: COLORS.green, fontWeight: 'bold',
+                    overflow: 'hidden',
                   }}>
-                    //
+                    <VehicleVisual
+                      brand={v.brand}
+                      cc={v.displacement_cc}
+                      hp={parseHP(v.max_horsepower)}
+                      weight={v.wet_weight_kg}
+                      price={v.msrp}
+                      category={v.category}
+                      accentColor={COLORS.green}
+                      width={240}
+                      height={120}
+                    />
                   </div>
 
                   {/* Rank Badge */}

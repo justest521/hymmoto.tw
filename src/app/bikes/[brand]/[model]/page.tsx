@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
+import VehicleVisual from '@/components/VehicleVisual';
 
 interface VehicleSpec {
   id: number;
@@ -270,19 +271,25 @@ const ModelPage = () => {
           style={{
             width: '100%',
             height: '250px',
-            background: 'linear-gradient(135deg, #3c3836 0%, #282828 100%)',
+            background: 'linear-gradient(135deg, #3c383640 0%, #282828 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '4px',
             marginBottom: '30px',
-            fontSize: '36px',
-            fontFamily: "'Orbitron', monospace",
-            color: '#b8f53e',
-            fontWeight: 'bold',
+            overflow: 'hidden',
           }}
         >
-          //
+          <VehicleVisual
+            brand={vehicle.brand}
+            cc={vehicle.displacement_cc}
+            hp={parseHP(vehicle.max_horsepower)}
+            weight={vehicle.wet_weight_kg}
+            price={vehicle.msrp}
+            accentColor="#b8f53e"
+            width={500}
+            height={250}
+          />
         </div>
         <h1 style={{ fontFamily: "'Orbitron', monospace", fontSize: '36px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#ebdbb2', letterSpacing: '2px' }}>
           {vehicle.model_name}
@@ -605,19 +612,23 @@ const ModelPage = () => {
                       style={{
                         width: '100%',
                         height: '100px',
-                        background: 'linear-gradient(135deg, #3c3836 0%, #282828 100%)',
+                        background: 'linear-gradient(135deg, #3c383640 0%, #282828 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: '3px',
                         marginBottom: '10px',
-                        fontSize: '20px',
-                        fontFamily: "'Orbitron', monospace",
-                        color: '#b8f53e',
-                        fontWeight: 'bold',
+                        overflow: 'hidden',
                       }}
                     >
-                      //
+                      <VehicleVisual
+                        brand={model.brand}
+                        cc={model.displacement_cc}
+                        hp={parseHP(model.max_horsepower)}
+                        accentColor="#b8f53e"
+                        width={200}
+                        height={100}
+                      />
                     </div>
                     <p style={{ fontSize: '13px', color: '#928374', margin: '0 0 3px 0', letterSpacing: '0.5px' }}>
                       {model.brand}

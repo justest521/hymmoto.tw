@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
+import { NewsVisual } from '@/components/VehicleVisual';
 
 interface Article {
   id: number;
@@ -138,7 +139,13 @@ export default function NewsPage() {
                       position: 'relative', overflow: 'hidden',
                       background: `linear-gradient(135deg, ${getCatColor(featured.category)}10, ${getCatColor(featured.category)}05)`,
                     }}>
-                      <span style={{ color: COLORS.muted, fontSize: '14px' }}>//</span>
+                      <NewsVisual
+                        category={featured.category}
+                        title={featured.title}
+                        accentColor={getCatColor(featured.category)}
+                        width={400}
+                        height={240}
+                      />
                       <div style={{
                         position: 'absolute', top: '10px', left: '10px',
                         backgroundColor: `${getCatColor(featured.category)}30`,
@@ -205,10 +212,16 @@ export default function NewsPage() {
                     {/* Image area */}
                     <div style={{
                       height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      position: 'relative',
+                      position: 'relative', overflow: 'hidden',
                       background: `linear-gradient(135deg, ${getCatColor(article.category)}10, ${getCatColor(article.category)}05)`,
                     }}>
-                      <span style={{ color: COLORS.muted, fontSize: '12px' }}>//</span>
+                      <NewsVisual
+                        category={article.category}
+                        title={article.title}
+                        accentColor={getCatColor(article.category)}
+                        width={350}
+                        height={130}
+                      />
                       <div style={{
                         position: 'absolute', top: '8px', left: '8px',
                         backgroundColor: `${getCatColor(article.category)}30`,
