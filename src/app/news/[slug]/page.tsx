@@ -301,7 +301,8 @@ export default function NewsDetailPage() {
                   <div style={{
                     backgroundColor: COLORS.bg, border: `1px solid ${COLORS.border}`,
                     borderRadius: '4px', padding: '16px', cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all 0.2s', height: '100px',
+                    display: 'flex', flexDirection: 'column', justifyContent: 'center',
                   }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = COLORS.green; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = COLORS.border; }}
@@ -312,6 +313,8 @@ export default function NewsDetailPage() {
                     <h3 style={{
                       fontSize: '12px', fontWeight: 700, color: COLORS.text, margin: 0,
                       lineHeight: '1.5', fontFamily: "'Noto Sans TC', sans-serif",
+                      overflow: 'hidden', display: '-webkit-box',
+                      WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                     }}>
                       {r.title}
                     </h3>
