@@ -16,6 +16,9 @@ interface Vehicle {
   msrp: number | null;
   engine_type: string | null;
   category: string | null;
+  seat_height_mm: number | null;
+  cooling_system: string | null;
+  fuel_tank_l: number | null;
 }
 
 const COLORS = {
@@ -53,7 +56,7 @@ const BrandPage = () => {
 
       const { data, error } = await supabase
         .from('vehicle_specs')
-        .select('id, brand, model_name, displacement_cc, max_horsepower, wet_weight_kg, msrp, engine_type, category')
+        .select('id, brand, model_name, displacement_cc, max_horsepower, wet_weight_kg, msrp, engine_type, category, seat_height_mm, cooling_system, fuel_tank_l')
         .ilike('brand', decodedBrand)
         .order('displacement_cc', { ascending: true });
 
@@ -226,11 +229,16 @@ const BrandPage = () => {
                   }}>
                     <VehicleVisual
                       brand={v.brand}
+                      modelName={v.model_name}
                       cc={v.displacement_cc}
                       hp={parseHP(v.max_horsepower)}
                       weight={v.wet_weight_kg}
                       price={v.msrp}
                       category={v.category}
+                      seatHeight={v.seat_height_mm}
+                      engineType={v.engine_type}
+                      cooling={v.cooling_system}
+                      fuelTank={v.fuel_tank_l}
                       accentColor={COLORS.green}
                       width={240}
                       height={120}

@@ -282,10 +282,16 @@ const ModelPage = () => {
         >
           <VehicleVisual
             brand={vehicle.brand}
+            modelName={vehicle.model_name}
             cc={vehicle.displacement_cc}
             hp={parseHP(vehicle.max_horsepower)}
             weight={vehicle.wet_weight_kg}
             price={vehicle.msrp}
+            category={vehicle.category}
+            seatHeight={vehicle.seat_height_mm}
+            engineType={vehicle.engine_type}
+            cooling={vehicle.cooling_system}
+            fuelTank={vehicle.fuel_tank_l}
             accentColor="#b8f53e"
             width={500}
             height={250}
