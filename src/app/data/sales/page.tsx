@@ -1,352 +1,257 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
 
-interface SalesData {
-  rank: number;
+interface SalesRow {
   brand: string;
-  model: string;
-  cc: string;
-  sales: number;
-  marketShare: number;
-  monthGrowth: number;
+  model_code: string;
+  display_name: string | null;
+  total_sales: number;
+  displacement: string | null;
+}
+
+const COLORS = {
+  bg: '#1d2021', card: '#282828', border: '#3c3836',
+  text: '#ebdbb2', muted: '#928374', green: '#b8f53e',
+  gold: '#fabd2f', red: '#fb4934', blue: '#83a598',
+};
+
+function bar(v: number, max: number, w: number = 16): string {
+  if (max === 0) return '░'.repeat(w);
+  const f = Math.max(v > 0 ? 1 : 0, Math.min(w, Math.round((v / max) * w)));
+  return '█'.repeat(f) + '░'.repeat(w - f);
 }
 
 const SalesPage: React.FC = () => {
-  const [selectedMonth, setSelectedMonth] = useState('2026-03');
+  const [rows, setRows] = useState<SalesRow[]>([]);
+  const [months, setMonths] = useState<string[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedCc, setSelectedCc] = useState('all');
+  const [loading, setLoading] = useState(true);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
-  const mockData: SalesData[] = [
-    { rank: 1, brand: 'YAMAHA', model: 'JOG', cc: '125', sales: 3245, marketShare: 8.2, monthGrowth: 12.5 },
-    { rank: 2, brand: 'HONDA', model: 'PCX160', cc: '160', sales: 2890, marketShare: 7.3, monthGrowth: -2.3 },
-    { rank: 3, brand: 'SYM', model: 'VF3i', cc: '125', sales: 2567, marketShare: 6.5, monthGrowth: 5.8 },
-    { rank: 4, brand: 'KYMCO', model: 'Activ125', cc: '125', sales: 2345, marketShare: 5.9, monthGrowth: 3.2 },
-    { rank: 5, brand: 'YAMAHA', model: 'FORCE155', cc: '155', sales: 2123, marketShare: 5.4, monthGrowth: -1.5 },
-    { rank: 6, brand: 'HONDA', model: 'CB150R', cc: '150', sales: 1987, marketShare: 5.0, monthGrowth: 8.7 },
-    { rank: 7, brand: 'SUZUKI', model: 'GSX-R150', cc: '150', sales: 1756, marketShare: 4.4, monthGrowth: 6.2 },
-    { rank: 8, brand: 'KYMCO', model: 'DOWNTOWN170i', cc: '170', sales: 1645, marketShare: 4.2, monthGrowth: -3.1 },
-    { rank: 9, brand: 'SYM', model: 'GTS300i', cc: '300', sales: 1534, marketShare: 3.9, monthGrowth: 11.3 },
-    { rank: 10, brand: 'YAMAHA', model: 'CYGNUS-X', cc: '125', sales: 1423, marketShare: 3.6, monthGrowth: 2.1 },
-    { rank: 11, brand: 'HONDA', model: 'Dio110', cc: '110', sales: 1312, marketShare: 3.3, monthGrowth: -4.2 },
-    { rank: 12, brand: 'SUZUKI', model: 'LETS4', cc: '110', sales: 1201, marketShare: 3.0, monthGrowth: 1.8 },
-    { rank: 13, brand: 'AEON', model: 'Pony110', cc: '110', sales: 1098, marketShare: 2.8, monthGrowth: 7.5 },
-    { rank: 14, brand: 'KYMCO', model: 'K-Pipe125', cc: '125', sales: 987, marketShare: 2.5, monthGrowth: 4.3 },
-    { rank: 15, brand: 'YAMAHA', model: 'BWSX', cc: '125', sales: 876, marketShare: 2.2, monthGrowth: 9.1 },
-    { rank: 16, brand: 'SYM', model: 'Jetpower110', cc: '110', sales: 765, marketShare: 1.9, monthGrowth: 0.5 },
-    { rank: 17, brand: 'HONDA', model: 'LEAD110', cc: '110', sales: 654, marketShare: 1.7, monthGrowth: -2.8 },
-    { rank: 18, brand: 'SUZUKI', model: 'AN110', cc: '110', sales: 543, marketShare: 1.4, monthGrowth: 3.6 },
-    { rank: 19, brand: 'KYMCO', model: 'Rectrix150', cc: '150', sales: 432, marketShare: 1.1, monthGrowth: 6.9 },
-    { rank: 20, brand: 'AEON', model: 'Sense110', cc: '110', sales: 321, marketShare: 0.8, monthGrowth: -1.2 },
-  ];
+  const supabase = createClient();
 
-  const months = ['2026-03', '2026-02', '2026-01', '2025-12', '2025-11', '2025-10'];
   const ccCategories = [
     { label: '全部', value: 'all' },
-    { label: '125cc', value: '125' },
-    { label: '150-250cc', value: '150-250' },
-    { label: '251-550cc', value: '251-550' },
-    { label: '551-1000cc', value: '551-1000' },
-    { label: '1000cc+', value: '1000+' },
-    { label: '電動', value: 'electric' },
+    { label: '電動', value: '電動機車' },
+    { label: '125cc', value: '125cc' },
+    { label: '150-250cc', value: '150-250cc' },
+    { label: '251-550cc', value: '251-550cc' },
+    { label: '551cc+', value: '551cc+' },
   ];
 
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: '#1d2021',
-    color: '#ebdbb2',
-    fontFamily: "'JetBrains Mono', monospace",
-    minHeight: '100vh',
-    padding: '40px 20px',
-    textAlign: 'center',
-  };
+  // Fetch available months
+  useEffect(() => {
+    const fetchMonths = async () => {
+      const { data } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('year_month')
+        .order('year_month', { ascending: false })
+        .limit(100);
 
-  const headerStyle: React.CSSProperties = {
-    marginBottom: '32px',
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontFamily: "'Orbitron', monospace",
-    fontSize: '36px',
-    fontWeight: 700,
-    letterSpacing: '3px',
-    color: '#ebdbb2',
-    margin: '0 0 8px 0',
-    textTransform: 'uppercase',
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: '13px',
-    color: '#928374',
-    fontFamily: "'Noto Sans TC', sans-serif",
-    margin: '0',
-  };
-
-  const controlsStyle: React.CSSProperties = {
-    marginBottom: '32px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  };
-
-  const monthButtonsStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  };
-
-  const monthButtonStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: '8px 16px',
-    fontSize: '11px',
-    fontFamily: "'JetBrains Mono', monospace",
-    border: '1px solid',
-    borderColor: isActive ? '#b8f53e' : '#3c3836',
-    backgroundColor: isActive ? '#b8f53e' : '#282828',
-    color: isActive ? '#1d2021' : '#ebdbb2',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    transition: 'all 0.3s ease',
-  });
-
-  const ccTabsStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  };
-
-  const ccTabStyle = (isActive: boolean): React.CSSProperties => ({
-    padding: '8px 12px',
-    fontSize: '11px',
-    fontFamily: "'JetBrains Mono', monospace",
-    border: '1px solid',
-    borderColor: isActive ? '#fabd2f' : '#3c3836',
-    backgroundColor: isActive ? '#fabd2f' : '#282828',
-    color: isActive ? '#1d2021' : '#ebdbb2',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    transition: 'all 0.3s ease',
-  });
-
-  const tableContainerStyle: React.CSSProperties = {
-    backgroundColor: '#282828',
-    border: '1px solid #3c3836',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    marginBottom: '24px',
-    maxWidth: '1200px',
-    margin: '0 auto 24px',
-  };
-
-  const tableHeaderStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: '6% 14% 16% 12% 14% 14% 14%',
-    backgroundColor: '#1d2021',
-    borderBottom: '1px solid #3c3836',
-    padding: '12px 8px',
-    fontSize: '11px',
-    color: '#928374',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '1px',
-  };
-
-  const tableBodyStyle: React.CSSProperties = {
-    maxHeight: '600px',
-    overflowY: 'auto',
-  };
-
-  const getRowStyle = (rank: number, isHovered: boolean): React.CSSProperties => {
-    let borderLeftColor = '#3c3836';
-    if (rank === 1) borderLeftColor = '#fabd2f';
-    else if (rank === 2) borderLeftColor = '#b8b8b8';
-    else if (rank === 3) borderLeftColor = '#d4913d';
-
-    return {
-      display: 'grid',
-      gridTemplateColumns: '6% 14% 16% 12% 14% 14% 14%',
-      padding: '12px 8px',
-      fontSize: '12px',
-      borderBottom: '1px solid #3c3836',
-      borderLeft: `3px solid ${borderLeftColor}`,
-      backgroundColor: isHovered ? 'rgba(184, 245, 62, 0.08)' : '#282828',
-      transition: 'all 0.2s ease',
-      cursor: 'pointer',
+      if (data) {
+        const unique = [...new Set(data.map(d => d.year_month))].slice(0, 12);
+        setMonths(unique);
+        if (unique.length > 0) setSelectedMonth(unique[0]);
+      }
     };
-  };
+    fetchMonths();
+  }, []);
 
-  const cellStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
+  // Fetch sales data when month or cc changes
+  useEffect(() => {
+    if (!selectedMonth) return;
+    const fetchSales = async () => {
+      setLoading(true);
+      let query = supabase
+        .from('vehicle_monthly_sales')
+        .select('brand, model_code, display_name, total_sales, displacement')
+        .eq('year_month', selectedMonth)
+        .gt('total_sales', 0)
+        .order('total_sales', { ascending: false })
+        .limit(50);
 
-  const rankBadgeStyle = (rank: number): React.CSSProperties => {
-    let bg = '#1d2021';
-    let color = '#ebdbb2';
-    if (rank === 1) {
-      bg = 'rgba(245, 214, 62, 0.2)';
-      color = '#fabd2f';
-    } else if (rank === 2) {
-      bg = 'rgba(184, 184, 184, 0.2)';
-      color = '#b8b8b8';
-    } else if (rank === 3) {
-      bg = 'rgba(212, 145, 61, 0.2)';
-      color = '#d4913d';
-    }
-    return {
-      padding: '4px 8px',
-      backgroundColor: bg,
-      color: color,
-      borderRadius: '3px',
-      fontSize: '11px',
-      fontWeight: 700,
+      if (selectedCc !== 'all') {
+        if (selectedCc === '150-250cc') {
+          query = query.in('displacement', ['150cc', '150-250cc', '250cc']);
+        } else if (selectedCc === '251-550cc') {
+          query = query.in('displacement', ['251-550cc', '300cc+']);
+        } else if (selectedCc === '551cc+') {
+          query = query.in('displacement', ['551-1000cc', '1000cc+']);
+        } else {
+          query = query.eq('displacement', selectedCc);
+        }
+      }
+
+      const { data } = await query;
+      setRows(data || []);
+      setLoading(false);
     };
-  };
+    fetchSales();
+  }, [selectedMonth, selectedCc]);
 
-  const positiveStyle: React.CSSProperties = {
-    color: '#b8f53e',
-  };
-
-  const negativeStyle: React.CSSProperties = {
-    color: '#fb4934',
-  };
-
-  const filteredData = mockData;
-  const totalSales = filteredData.reduce((sum, row) => sum + row.sales, 0);
+  const totalSales = rows.reduce((s, r) => s + r.total_sales, 0);
+  const maxSales = rows[0]?.total_sales || 1;
 
   return (
-    <div style={containerStyle}>
-      {/* Header */}
-      <section style={headerStyle}>
-        <h1 style={titleStyle}>SALES RANKINGS</h1>
-        <p style={subtitleStyle}>月度銷售排行 · {selectedMonth}</p>
-      </section>
+    <div style={{
+      backgroundColor: COLORS.bg, color: COLORS.text,
+      fontFamily: "'JetBrains Mono', monospace",
+      minHeight: '100vh', padding: '30px 24px',
+    }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
-      {/* Controls */}
-      <div style={controlsStyle}>
+        {/* Terminal Header */}
+        <div style={{ marginBottom: '40px', borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '20px' }}>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: COLORS.green }}>data --sales --rank</span>
+          </div>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: COLORS.text, margin: 0, letterSpacing: '2px' }}>
+            SALES RANKINGS
+          </h1>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            月度銷售排行 · {selectedMonth || '...'}
+          </div>
+        </div>
+
         {/* Month Selector */}
-        <div style={monthButtonsStyle}>
-          {months.map((month) => (
-            <button
-              key={month}
-              style={monthButtonStyle(selectedMonth === month)}
-              onClick={() => setSelectedMonth(month)}
-              onMouseEnter={(e) => {
-                if (selectedMonth !== month) {
-                  (e.currentTarget as HTMLElement).style.borderColor = '#b8f53e';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedMonth !== month) {
-                  (e.currentTarget as HTMLElement).style.borderColor = '#3c3836';
-                }
-              }}
-            >
-              {month}
+        <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {months.map((m) => (
+            <button key={m} onClick={() => setSelectedMonth(m)} style={{
+              padding: '6px 14px', fontSize: '11px', cursor: 'pointer', borderRadius: '4px',
+              fontFamily: "'JetBrains Mono', monospace",
+              border: `1px solid ${selectedMonth === m ? COLORS.green : COLORS.border}`,
+              backgroundColor: selectedMonth === m ? COLORS.green : COLORS.card,
+              color: selectedMonth === m ? COLORS.bg : COLORS.text,
+            }}>
+              {m}
             </button>
           ))}
         </div>
 
-        {/* CC Category Tabs */}
-        <div style={ccTabsStyle}>
+        {/* CC Filter */}
+        <div style={{ marginBottom: '32px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {ccCategories.map((cat) => (
-            <button
-              key={cat.value}
-              style={ccTabStyle(selectedCc === cat.value)}
-              onClick={() => setSelectedCc(cat.value)}
-              onMouseEnter={(e) => {
-                if (selectedCc !== cat.value) {
-                  (e.currentTarget as HTMLElement).style.borderColor = '#fabd2f';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedCc !== cat.value) {
-                  (e.currentTarget as HTMLElement).style.borderColor = '#3c3836';
-                }
-              }}
-            >
+            <button key={cat.value} onClick={() => setSelectedCc(cat.value)} style={{
+              padding: '6px 12px', fontSize: '11px', cursor: 'pointer', borderRadius: '4px',
+              fontFamily: "'JetBrains Mono', monospace",
+              border: `1px solid ${selectedCc === cat.value ? COLORS.gold : COLORS.border}`,
+              backgroundColor: selectedCc === cat.value ? COLORS.gold : COLORS.card,
+              color: selectedCc === cat.value ? COLORS.bg : COLORS.text,
+            }}>
               {cat.label}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Ranking Table */}
-      <div style={tableContainerStyle}>
-        <div style={tableHeaderStyle}>
-          <div style={cellStyle}>#</div>
-          <div style={cellStyle}>車型</div>
-          <div style={cellStyle}>品牌</div>
-          <div style={cellStyle}>級距</div>
-          <div style={cellStyle}>銷量</div>
-          <div style={cellStyle}>市佔%</div>
-          <div style={cellStyle}>變化</div>
-        </div>
-
-        <div style={tableBodyStyle}>
-          {filteredData.map((row) => (
-            <div
-              key={row.rank}
-              style={getRowStyle(row.rank, hoveredRow === row.rank)}
-              onMouseEnter={() => setHoveredRow(row.rank)}
-              onMouseLeave={() => setHoveredRow(null)}
-            >
-              <div style={cellStyle}>
-                <div style={rankBadgeStyle(row.rank)}>#{row.rank}</div>
-              </div>
-              <div style={cellStyle}>{row.model}</div>
-              <div style={cellStyle}>{row.brand}</div>
-              <div style={cellStyle}>{row.cc}cc</div>
-              <div style={cellStyle}>{row.sales.toLocaleString()}</div>
-              <div style={cellStyle}>{row.marketShare.toFixed(1)}%</div>
-              <div style={cellStyle}>
-                <span style={row.monthGrowth > 0 ? positiveStyle : negativeStyle}>
-                  {row.monthGrowth > 0 ? '+' : ''}{row.monthGrowth.toFixed(1)}%
-                </span>
-              </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: COLORS.muted }}>
+            <p>$ loading sales data...</p>
+            <p style={{ color: COLORS.green }}>▌</p>
+          </div>
+        ) : (
+          <div style={{
+            backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: '4px', overflow: 'hidden',
+          }}>
+            {/* Table Header */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '50px 1fr 100px 80px 200px',
+              padding: '10px 16px', backgroundColor: COLORS.bg,
+              borderBottom: `1px solid ${COLORS.border}`,
+              fontSize: '11px', color: COLORS.muted, fontWeight: 700, letterSpacing: '1px',
+            }}>
+              <div>#</div>
+              <div>MODEL</div>
+              <div style={{ textAlign: 'right' }}>SALES</div>
+              <div style={{ textAlign: 'right' }}>SHARE</div>
+              <div style={{ textAlign: 'center' }}>BAR</div>
             </div>
-          ))}
-        </div>
 
-        {/* Table Footer */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '6% 14% 16% 12% 14% 14% 14%',
-            padding: '12px 8px',
-            backgroundColor: '#1d2021',
-            borderTop: '1px solid #3c3836',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: '#b8f53e',
-          }}
-        >
-          <div style={cellStyle}></div>
-          <div style={cellStyle}></div>
-          <div style={cellStyle}>TOTAL</div>
-          <div style={cellStyle}></div>
-          <div style={cellStyle}>{totalSales.toLocaleString()}</div>
-          <div style={cellStyle}>100.0%</div>
-          <div style={cellStyle}></div>
-        </div>
-      </div>
+            {/* Rows */}
+            {rows.map((row, i) => {
+              const rank = i + 1;
+              const share = totalSales > 0 ? ((row.total_sales / totalSales) * 100) : 0;
+              let borderColor = COLORS.border;
+              if (rank === 1) borderColor = COLORS.gold;
+              else if (rank === 2) borderColor = '#b8b8b8';
+              else if (rank === 3) borderColor = '#d4913d';
 
-      {/* Footer Info */}
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '16px',
-          backgroundColor: '#282828',
-          border: '1px solid #3c3836',
-          borderRadius: '4px',
-          fontSize: '11px',
-          color: '#928374',
-        }}
-      >
-        <div style={{ marginBottom: '8px' }}>共 {filteredData.length} 款車型 | 總銷量 {totalSales.toLocaleString()} 台</div>
-        <div>數據更新時間: {selectedMonth} · HYMMOTO 市場監測系統</div>
+              return (
+                <Link
+                  key={`${row.brand}-${row.model_code}-${i}`}
+                  href={`/bikes/${encodeURIComponent(row.brand)}/${encodeURIComponent(row.display_name || row.model_code)}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <div
+                    style={{
+                      display: 'grid', gridTemplateColumns: '50px 1fr 100px 80px 200px',
+                      padding: '10px 16px', fontSize: '12px',
+                      borderBottom: `1px solid ${COLORS.border}`,
+                      borderLeft: `3px solid ${borderColor}`,
+                      backgroundColor: hoveredRow === i ? 'rgba(184,245,62,0.06)' : COLORS.card,
+                      transition: 'background 0.15s',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={() => setHoveredRow(i)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                  >
+                    <div style={{
+                      color: rank <= 3 ? COLORS.gold : COLORS.muted,
+                      fontWeight: rank <= 3 ? 700 : 400,
+                    }}>
+                      #{rank}
+                    </div>
+                    <div>
+                      <span style={{ color: COLORS.muted, fontSize: '11px' }}>{row.brand} </span>
+                      <span style={{ color: COLORS.text }}>{row.display_name || row.model_code}</span>
+                      {row.displacement && (
+                        <span style={{ color: COLORS.muted, fontSize: '10px', marginLeft: '8px' }}>
+                          {row.displacement}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right', color: COLORS.gold, fontWeight: 700 }}>
+                      {row.total_sales.toLocaleString()}
+                    </div>
+                    <div style={{ textAlign: 'right', color: COLORS.muted }}>
+                      {share.toFixed(1)}%
+                    </div>
+                    <div style={{ textAlign: 'center', whiteSpace: 'pre', color: COLORS.green }}>
+                      {bar(row.total_sales, maxSales, 16)}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+
+            {/* Footer */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '50px 1fr 100px 80px 200px',
+              padding: '10px 16px', backgroundColor: COLORS.bg,
+              borderTop: `1px solid ${COLORS.border}`,
+              fontSize: '12px', fontWeight: 700, color: COLORS.green,
+            }}>
+              <div></div>
+              <div>TOTAL ({rows.length} models)</div>
+              <div style={{ textAlign: 'right' }}>{totalSales.toLocaleString()}</div>
+              <div style={{ textAlign: 'right' }}>100%</div>
+              <div></div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer info */}
+        <div style={{
+          marginTop: '16px', padding: '12px 16px',
+          backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`,
+          borderRadius: '4px', fontSize: '11px', color: COLORS.muted,
+        }}>
+          數據來源: 公路局機車新領牌登錄 · HYMMOTO 市場監測系統
+        </div>
       </div>
     </div>
   );

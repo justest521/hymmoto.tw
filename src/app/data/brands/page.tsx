@@ -1,465 +1,293 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
 
-interface BrandData {
-  name: string;
-  marketShare: number;
-  totalSales: number;
-  color: string;
-  topModels: Array<{ name: string; sales: number }>;
-  trend: number;
-  prevYear: number;
+const COLORS = {
+  bg: '#1d2021', card: '#282828', border: '#3c3836',
+  text: '#ebdbb2', muted: '#928374', green: '#b8f53e',
+  gold: '#fabd2f', red: '#fb4934', blue: '#83a598',
+};
+
+const brandMap: Record<string, string> = {
+  '三陽': 'SYM', '光陽': 'KYMCO', '山葉': 'YAMAHA', '睿能': 'GOGORO',
+  '鈴木': 'SUZUKI', '比雅久': 'PGO', '宏佳騰': 'AEON', '威速登': 'VESTON',
+  '中華': 'CMC', '其他': 'OTHER',
+  'HONDA': 'HONDA', 'KAWASAKI': 'KAWASAKI', 'PLAGGIO': 'PIAGGIO',
+  'TRIUMPH': 'TRIUMPH', 'APRILIA': 'APRILIA', 'BMW': 'BMW',
+  'DUCATI': 'DUCATI', 'KTM': 'KTM', 'HUSQVARNA': 'HUSQVARNA',
+  'CFMOTO': 'CFMOTO', 'INDIAN': 'INDIAN', 'MOTO GUZZI': 'MOTOGUZZI',
+  'MV AGUSTA': 'MVAGUSTA', 'GAS GAS': 'GAS GAS', 'CPI': 'CPI',
+  'Benelli': 'BENELLI', 'BRIXTON': 'BRIXTON', '哈特佛': 'HARTFORD',
+  'HARLEY-DAVIDSON': 'HARLEY-DAVIDSON',
+};
+
+const brandColors: Record<string, string> = {
+  SYM: COLORS.green, KYMCO: COLORS.blue, YAMAHA: COLORS.red,
+  GOGORO: '#3b82f6', SUZUKI: COLORS.gold, HONDA: '#ef4444',
+  PGO: '#a78bfa', PIAGGIO: '#34d399',
+};
+
+interface BrandRow { rawBrand: string; name: string; total: number; share: number }
+interface TopModel { brand: string; display_name: string; model_code: string; total_sales: number }
+
+function bar(v: number, max: number, w: number = 24): string {
+  if (max === 0) return '░'.repeat(w);
+  const f = Math.max(v > 0 ? 1 : 0, Math.min(w, Math.round((v / max) * w)));
+  return '█'.repeat(f) + '░'.repeat(w - f);
 }
 
 const BrandsPage: React.FC = () => {
+  const [brands, setBrands] = useState<BrandRow[]>([]);
+  const [topModelsByBrand, setTopModelsByBrand] = useState<Record<string, TopModel[]>>({});
+  const [latestMonth, setLatestMonth] = useState('');
+  const [loading, setLoading] = useState(true);
   const [hoveredBrand, setHoveredBrand] = useState<string | null>(null);
 
-  const brandData: BrandData[] = [
-    {
-      name: 'KYMCO',
-      marketShare: 30.2,
-      totalSales: 57840,
-      color: '#b8f53e',
-      topModels: [
-        { name: 'Activ125', sales: 5234 },
-        { name: 'DOWNTOWN170i', sales: 4156 },
-        { name: 'K-Pipe125', sales: 3890 },
-      ],
-      trend: 3.2,
-      prevYear: 28.5,
-    },
-    {
-      name: 'SYM',
-      marketShare: 28.5,
-      totalSales: 54560,
-      color: '#fabd2f',
-      topModels: [
-        { name: 'VF3i', sales: 6123 },
-        { name: 'GTS300i', sales: 5401 },
-        { name: 'Jetpower110', sales: 3876 },
-      ],
-      trend: 2.8,
-      prevYear: 27.1,
-    },
-    {
-      name: 'YAMAHA',
-      marketShare: 22.1,
-      totalSales: 42345,
-      color: '#fb4934',
-      topModels: [
-        { name: 'JOG', sales: 3245 },
-        { name: 'FORCE155', sales: 2890 },
-        { name: 'CYGNUS-X', sales: 2234 },
-      ],
-      trend: -1.5,
-      prevYear: 23.2,
-    },
-    {
-      name: 'GOGORO',
-      marketShare: 6.8,
-      totalSales: 13045,
-      color: '#3b82f6',
-      topModels: [
-        { name: 'GOGORO 3', sales: 4234 },
-        { name: 'GOGORO 2', sales: 3892 },
-        { name: 'GOGORO S', sales: 2134 },
-      ],
-      trend: 5.2,
-      prevYear: 3.8,
-    },
-    {
-      name: 'HONDA',
-      marketShare: 4.2,
-      totalSales: 8043,
-      color: '#ef4444',
-      topModels: [
-        { name: 'PCX160', sales: 2890 },
-        { name: 'CB150R', sales: 1987 },
-        { name: 'Dio110', sales: 1312 },
-      ],
-      trend: -2.3,
-      prevYear: 5.1,
-    },
-    {
-      name: '其他',
-      marketShare: 8.2,
-      totalSales: 15710,
-      color: '#928374',
-      topModels: [
-        { name: 'SUZUKI LETS4', sales: 1201 },
-        { name: 'AEON Pony110', sales: 1098 },
-        { name: 'SUZUKI AN110', sales: 543 },
-      ],
-      trend: 1.2,
-      prevYear: 6.8,
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient();
 
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: '#1d2021',
-    color: '#ebdbb2',
-    fontFamily: "'JetBrains Mono', monospace",
-    minHeight: '100vh',
-    padding: '40px 20px',
-    textAlign: 'center',
-  };
+      // Get latest month
+      const { data: monthData } = await supabase
+        .from('sales_brand_monthly')
+        .select('year_month')
+        .order('year_month', { ascending: false })
+        .limit(1);
 
-  const headerStyle: React.CSSProperties = {
-    marginBottom: '48px',
-  };
+      const month = monthData?.[0]?.year_month || '2026-03';
+      setLatestMonth(month);
 
-  const titleStyle: React.CSSProperties = {
-    fontFamily: "'Orbitron', monospace",
-    fontSize: '36px',
-    fontWeight: 700,
-    letterSpacing: '3px',
-    color: '#ebdbb2',
-    margin: '0 0 8px 0',
-    textTransform: 'uppercase',
-  };
+      // Brand market share
+      const { data: brandData } = await supabase
+        .from('sales_brand_monthly')
+        .select('brand, total, market_share')
+        .eq('year_month', month)
+        .order('total', { ascending: false });
 
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: '13px',
-    color: '#928374',
-    fontFamily: "'Noto Sans TC', sans-serif",
-    margin: '0',
-  };
+      if (brandData) {
+        const mapped = brandData
+          .filter(b => b.total > 0)
+          .map(b => ({
+            rawBrand: b.brand,
+            name: brandMap[b.brand] || b.brand,
+            total: b.total,
+            share: parseFloat(b.market_share) || 0,
+          }));
+        setBrands(mapped);
 
-  const sectionTitleStyle: React.CSSProperties = {
-    fontFamily: "'Orbitron', monospace",
-    fontSize: '20px',
-    fontWeight: 700,
-    letterSpacing: '2px',
-    color: '#ebdbb2',
-    margin: '0 0 8px 0',
-    textTransform: 'uppercase',
-    textAlign: 'center',
-  };
+        // Fetch top 3 models per top 8 brands
+        const topBrands = mapped.slice(0, 8);
+        const modelMap: Record<string, TopModel[]> = {};
 
-  const sectionSubtitleStyle: React.CSSProperties = {
-    fontSize: '11px',
-    color: '#928374',
-    fontFamily: "'Noto Sans TC', sans-serif",
-    marginBottom: '24px',
-    textAlign: 'center',
-  };
+        // Get latest model month
+        const { data: modelMonthData } = await supabase
+          .from('vehicle_monthly_sales')
+          .select('year_month')
+          .order('year_month', { ascending: false })
+          .limit(1);
 
-  const shareBarContainerStyle: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto 48px',
-  };
+        const modelMonth = modelMonthData?.[0]?.year_month || month;
 
-  const barRowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '12px',
-  };
+        for (const brand of topBrands) {
+          const { data: models } = await supabase
+            .from('vehicle_monthly_sales')
+            .select('brand, display_name, model_code, total_sales')
+            .eq('year_month', modelMonth)
+            .eq('brand', brand.rawBrand)
+            .gt('total_sales', 0)
+            .order('total_sales', { ascending: false })
+            .limit(3);
 
-  const brandNameStyle: React.CSSProperties = {
-    width: '80px',
-    fontSize: '12px',
-    fontWeight: 700,
-    textAlign: 'right',
-    color: '#ebdbb2',
-  };
+          if (models) {
+            modelMap[brand.name] = models as TopModel[];
+          }
+        }
+        setTopModelsByBrand(modelMap);
+      }
 
-  const barTrackStyle: React.CSSProperties = {
-    flex: 1,
-    height: '20px',
-    backgroundColor: '#282828',
-    border: '1px solid #3c3836',
-    borderRadius: '3px',
-    overflow: 'hidden',
-    position: 'relative',
-  };
+      setLoading(false);
+    };
 
-  const getBarFillStyle = (percentage: number): React.CSSProperties => ({
-    height: '100%',
-    width: `${percentage}%`,
-    backgroundColor: brandData.find((b) => b.marketShare === percentage)?.color || '#b8f53e',
-    transition: 'all 0.4s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingRight: '6px',
-  });
+    fetchData();
+  }, []);
 
-  const percentageStyle: React.CSSProperties = {
-    width: '50px',
-    fontSize: '12px',
-    fontWeight: 700,
-    color: '#ebdbb2',
-    textAlign: 'left',
-  };
+  const maxShare = brands[0]?.share || 1;
+  const totalSales = brands.reduce((s, b) => s + b.total, 0);
 
-  const brandCardGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '16px',
-    maxWidth: '1200px',
-    margin: '0 auto 48px',
-  };
-
-  const brandCardStyle: React.CSSProperties = {
-    backgroundColor: '#282828',
-    border: '1px solid #3c3836',
-    padding: '20px',
-    borderRadius: '4px',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-  };
-
-  const getBrandCardHoverStyle = (brandName: string): React.CSSProperties => {
-    if (hoveredBrand === brandName) {
-      return {
-        ...brandCardStyle,
-        borderColor: '#b8f53e',
-        boxShadow: '0 0 12px rgba(184, 245, 62, 0.15)',
-      };
-    }
-    return brandCardStyle;
-  };
-
-  const cardBrandNameStyle: React.CSSProperties = {
-    fontFamily: "'Orbitron', monospace",
-    fontSize: '16px',
-    fontWeight: 700,
-    letterSpacing: '1px',
-    color: '#ebdbb2',
-    margin: '0 0 12px 0',
-    textTransform: 'uppercase',
-  };
-
-  const cardShareStyle: React.CSSProperties = {
-    fontSize: '24px',
-    fontWeight: 700,
-    color: '#b8f53e',
-    margin: '0 0 4px 0',
-  };
-
-  const cardShareLabelStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: '#928374',
-    fontFamily: "'Noto Sans TC', sans-serif",
-    marginBottom: '12px',
-  };
-
-  const topModelsStyle: React.CSSProperties = {
-    borderTop: '1px solid #3c3836',
-    paddingTop: '12px',
-    marginTop: '12px',
-  };
-
-  const modelItemStyle: React.CSSProperties = {
-    fontSize: '11px',
-    color: '#ebdbb2',
-    fontFamily: "'Noto Sans TC', sans-serif",
-    marginBottom: '6px',
-    textAlign: 'left',
-  };
-
-  const trendStyle = (trend: number): React.CSSProperties => ({
-    fontSize: '11px',
-    color: trend > 0 ? '#b8f53e' : '#fb4934',
-    fontWeight: 700,
-  });
-
-  const comparisonGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '16px',
-    maxWidth: '1200px',
-    margin: '0 auto 48px',
-  };
-
-  const comparisonCardStyle: React.CSSProperties = {
-    backgroundColor: '#282828',
-    border: '1px solid #3c3836',
-    padding: '16px',
-    borderRadius: '4px',
-  };
-
-  const comparisonBarStyle: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px',
-    marginTop: '12px',
-    alignItems: 'flex-end',
-  };
-
-  const comparisonBarItemStyle = (height: number): React.CSSProperties => ({
-    flex: 1,
-    height: `${height}px`,
-    backgroundColor: '#b8f53e',
-    borderRadius: '2px',
-  });
-
-  const insightsBoxStyle: React.CSSProperties = {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    backgroundColor: '#282828',
-    border: '1px solid #3c3836',
-    padding: '20px',
-    borderRadius: '4px',
-  };
-
-  const insightListStyle: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#ebdbb2',
-    fontFamily: "'Noto Sans TC', sans-serif",
-    lineHeight: '1.8',
-  };
+  if (loading) {
+    return (
+      <div style={{
+        backgroundColor: COLORS.bg, color: COLORS.green, minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: '14px',
+      }}>
+        $ loading brand analysis...
+      </div>
+    );
+  }
 
   return (
-    <div style={containerStyle}>
-      {/* Header */}
-      <section style={headerStyle}>
-        <h1 style={titleStyle}>BRAND ANALYSIS</h1>
-        <p style={subtitleStyle}>品牌市佔率深度分析</p>
-      </section>
+    <div style={{
+      backgroundColor: COLORS.bg, color: COLORS.text,
+      fontFamily: "'JetBrains Mono', monospace",
+      minHeight: '100vh', padding: '30px 24px',
+    }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
-      {/* Market Share Bars Section */}
-      <section style={shareBarContainerStyle}>
-        <h2 style={sectionTitleStyle}>MARKET SHARE</h2>
-        <p style={sectionSubtitleStyle}>品牌市佔率排行</p>
-
-        {brandData.map((brand) => (
-          <div key={brand.name} style={barRowStyle}>
-            <div style={brandNameStyle}>{brand.name}</div>
-            <div style={barTrackStyle}>
-              <div
-                style={getBarFillStyle(brand.marketShare)}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.opacity = '0.85';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.opacity = '1';
-                }}
-              >
-                <span style={{ fontSize: '10px', color: '#1d2021', fontWeight: 700 }}>
-                  {brand.marketShare.toFixed(1)}%
-                </span>
-              </div>
-            </div>
-            <div style={percentageStyle}>{brand.marketShare.toFixed(1)}%</div>
+        {/* Terminal Header */}
+        <div style={{ marginBottom: '40px', borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '20px' }}>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: COLORS.green }}>data --brands --analysis</span>
           </div>
-        ))}
-      </section>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: COLORS.text, margin: 0, letterSpacing: '2px' }}>
+            BRAND ANALYSIS
+          </h1>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            品牌市佔率深度分析 · {latestMonth}
+          </div>
+        </div>
 
-      {/* Brand Cards Section */}
-      <section>
-        <h2 style={sectionTitleStyle}>BRAND PROFILES</h2>
-        <p style={sectionSubtitleStyle}>品牌詳細資訊</p>
-
-        <div style={brandCardGridStyle}>
-          {brandData.slice(0, 6).map((brand) => (
-            <div
-              key={brand.name}
-              style={getBrandCardHoverStyle(brand.name)}
-              onMouseEnter={() => setHoveredBrand(brand.name)}
-              onMouseLeave={() => setHoveredBrand(null)}
-            >
-              <h3 style={cardBrandNameStyle}>{brand.name}</h3>
-
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: brand.color,
-                  borderRadius: '4px',
-                  margin: '0 auto 12px',
-                  opacity: 0.8,
-                }}
-              ></div>
-
-              <div style={cardShareStyle}>{brand.marketShare.toFixed(1)}%</div>
-              <div style={cardShareLabelStyle}>市場佔有率</div>
-
-              <div style={{ fontSize: '13px', color: '#ebdbb2', fontWeight: 700, marginBottom: '12px' }}>
-                {brand.totalSales.toLocaleString()} 台
-              </div>
-              <div style={{ fontSize: '10px', color: '#928374', fontFamily: "'Noto Sans TC', sans-serif", marginBottom: '12px' }}>
-                累計銷量
-              </div>
-
-              <div style={topModelsStyle}>
-                <div style={{ fontSize: '10px', color: '#928374', fontFamily: "'Noto Sans TC', sans-serif", marginBottom: '8px', fontWeight: 700 }}>
-                  TOP 3 MODELS
-                </div>
-                {brand.topModels.map((model, idx) => (
-                  <div key={idx} style={modelItemStyle}>
-                    {idx + 1}. {model.name} ({model.sales})
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ marginTop: '12px', ...trendStyle(brand.trend) }}>
-                {brand.trend > 0 ? '↑' : '↓'} {Math.abs(brand.trend)}%
-              </div>
+        {/* Summary Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '40px' }}>
+          {[
+            { label: 'TOTAL SALES', value: totalSales.toLocaleString(), sym: '>>' },
+            { label: 'ACTIVE BRANDS', value: `${brands.length}`, sym: '>_' },
+            { label: 'LATEST DATA', value: latestMonth, sym: '$>' },
+          ].map((s, i) => (
+            <div key={i} style={{
+              backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`,
+              padding: '16px', borderRadius: '4px',
+            }}>
+              <div style={{ color: COLORS.green, fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{s.sym}</div>
+              <div style={{ color: COLORS.text, fontSize: '20px', fontWeight: 700 }}>{s.value}</div>
+              <div style={{ color: COLORS.muted, fontSize: '10px', letterSpacing: '1px', marginTop: '4px' }}>{s.label}</div>
             </div>
           ))}
         </div>
-      </section>
 
-      {/* Year-over-Year Comparison */}
-      <section>
-        <h2 style={sectionTitleStyle}>YEAR-OVER-YEAR</h2>
-        <p style={sectionSubtitleStyle}>2025 vs 2026 市佔率對比</p>
-
-        <div style={comparisonGridStyle}>
-          {brandData.slice(0, 6).map((brand) => {
-            const maxValue = Math.max(brand.marketShare, brand.prevYear);
-            const curr = (brand.marketShare / maxValue) * 120;
-            const prev = (brand.prevYear / maxValue) * 120;
-
-            return (
-              <div key={brand.name} style={comparisonCardStyle}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ebdbb2' }}>
-                  {brand.name}
+        {/* Market Share Terminal View */}
+        <section style={{ marginBottom: '40px' }}>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginBottom: '12px' }}>
+            $ <span style={{ color: COLORS.green }}>brand --share --bar</span>
+          </div>
+          <div style={{
+            backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: '4px', padding: '20px',
+          }}>
+            <div style={{ fontSize: '13px', whiteSpace: 'pre', lineHeight: '1.8', fontFamily: "'JetBrains Mono', monospace" }}>
+              {brands.slice(0, 15).map((b, i) => (
+                <div key={i}>
+                  {`  ${b.name.padEnd(18)} ${bar(b.share, maxShare, 20)} ${`${b.share}%`.padStart(6)}  (${b.total.toLocaleString().padStart(6)})`}
                 </div>
-                <div style={comparisonBarStyle}>
-                  <div style={comparisonBarItemStyle(prev)}></div>
-                  <div style={{ ...comparisonBarItemStyle(curr), backgroundColor: '#fabd2f' }}></div>
-                </div>
-                <div style={{ fontSize: '10px', color: '#928374', marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>2025: {brand.prevYear.toFixed(1)}%</span>
-                  <span>2026: {brand.marketShare.toFixed(1)}%</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              ))}
+            </div>
+          </div>
+        </section>
 
-      {/* Key Insights Box */}
-      <section>
-        <h2 style={sectionTitleStyle}>KEY INSIGHTS</h2>
-        <p style={sectionSubtitleStyle}>關鍵數據洞察</p>
+        {/* Brand Cards */}
+        <section style={{ marginBottom: '40px' }}>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginBottom: '12px' }}>
+            $ <span style={{ color: COLORS.green }}>brand --profiles</span>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '12px',
+          }}>
+            {brands.slice(0, 8).map((brand) => {
+              const color = brandColors[brand.name] || COLORS.muted;
+              const models = topModelsByBrand[brand.name] || [];
+              return (
+                <Link
+                  key={brand.name}
+                  href={`/bikes/${encodeURIComponent(brand.rawBrand)}`}
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <div
+                    style={{
+                      backgroundColor: COLORS.card,
+                      border: `1px solid ${hoveredBrand === brand.name ? COLORS.green : COLORS.border}`,
+                      padding: '20px', borderRadius: '4px',
+                      transition: 'all 0.2s', cursor: 'pointer',
+                      boxShadow: hoveredBrand === brand.name ? '0 0 12px rgba(184,245,62,0.15)' : 'none',
+                    }}
+                    onMouseEnter={() => setHoveredBrand(brand.name)}
+                    onMouseLeave={() => setHoveredBrand(null)}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '1px' }}>{brand.name}</div>
+                      <div style={{
+                        width: '12px', height: '12px', borderRadius: '2px',
+                        backgroundColor: color,
+                      }} />
+                    </div>
 
-        <div style={insightsBoxStyle}>
-          <ul style={{ ...insightListStyle, listStyle: 'none', padding: 0, margin: 0 }}>
-            <li style={{ marginBottom: '8px' }}>
-              • KYMCO 與 SYM 合占市場 58.7%，龍頭地位穩固
-            </li>
-            <li style={{ marginBottom: '8px' }}>
-              • 電動機車品牌 GOGORO 年增幅 5.2%，成長最快
-            </li>
-            <li style={{ marginBottom: '8px' }}>
-              • TOP 3 品牌（KYMCO/SYM/YAMAHA）市佔率 80.8%，市場集中度高
-            </li>
-            <li style={{ marginBottom: '8px' }}>
-              • 其他小品牌合計 8.2%，市場仍有多元化空間
-            </li>
-            <li>
-              • 傳統燃油機車仍占市場 91.8%，綠能轉型加速中
-            </li>
-          </ul>
-        </div>
-      </section>
+                    <div style={{ fontSize: '24px', fontWeight: 700, color: COLORS.green, marginBottom: '4px' }}>
+                      {brand.share}%
+                    </div>
+                    <div style={{ fontSize: '10px', color: COLORS.muted, marginBottom: '12px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+                      市場佔有率
+                    </div>
 
-      {/* Footer Spacer */}
-      <div style={{ height: '40px' }}></div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, marginBottom: '4px' }}>
+                      {brand.total.toLocaleString()} <span style={{ fontSize: '10px', color: COLORS.muted }}>台</span>
+                    </div>
+
+                    {models.length > 0 && (
+                      <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '12px', marginTop: '12px' }}>
+                        <div style={{ fontSize: '10px', color: COLORS.muted, marginBottom: '8px', fontWeight: 700 }}>
+                          TOP MODELS
+                        </div>
+                        {models.map((m, idx) => (
+                          <div key={idx} style={{
+                            fontSize: '11px', color: COLORS.text, marginBottom: '4px',
+                            fontFamily: "'Noto Sans TC', sans-serif",
+                          }}>
+                            {idx + 1}. {m.display_name || m.model_code}
+                            <span style={{ color: COLORS.gold, marginLeft: '8px' }}>
+                              {m.total_sales.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Pie-like summary */}
+        <section>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginBottom: '12px' }}>
+            $ <span style={{ color: COLORS.green }}>brand --insights</span>
+          </div>
+          <div style={{
+            backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: '4px', padding: '20px',
+          }}>
+            <div style={{ fontSize: '12px', color: COLORS.text, fontFamily: "'Noto Sans TC', sans-serif", lineHeight: 2 }}>
+              {brands.length >= 3 && (
+                <>
+                  <div>
+                    • TOP 3 品牌（{brands.slice(0, 3).map(b => b.name).join('/')}）合計市佔 {brands.slice(0, 3).reduce((s, b) => s + b.share, 0).toFixed(1)}%
+                  </div>
+                  <div>
+                    • 共 {brands.length} 個活躍品牌，總銷量 {totalSales.toLocaleString()} 台
+                  </div>
+                  <div>
+                    • 市場龍頭 {brands[0].name} 以 {brands[0].share}% 市佔率領先
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+      </div>
     </div>
   );
 };
