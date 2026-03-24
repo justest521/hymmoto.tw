@@ -20,7 +20,7 @@ const brandMap: Record<string, string> = {
   'CFMOTO': 'CFMOTO', 'INDIAN': 'INDIAN', 'MOTO GUZZI': 'MOTOGUZZI',
   'MV AGUSTA': 'MVAGUSTA', 'GAS GAS': 'GAS GAS', 'CPI': 'CPI',
   'Benelli': 'BENELLI', 'BRIXTON': 'BRIXTON', '哈特佛': 'HARTFORD',
-  'HARLEY-DAVIDSON': 'HARLEY-DAVIDSON',
+  'HARLEY-DAVIDSON': 'HARLEY-DAVIDSON', 'HARLEY-D': 'HARLEY-DAVIDSON',
 };
 
 const brandColors: Record<string, string> = {
