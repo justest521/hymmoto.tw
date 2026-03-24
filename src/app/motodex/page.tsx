@@ -73,9 +73,9 @@ export default function MotodexPage() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (v) =>
-          v.model_name.toLowerCase().includes(query) ||
-          v.brand.toLowerCase().includes(query) ||
-          v.category.toLowerCase().includes(query)
+          (v.model_name || '').toLowerCase().includes(query) ||
+          (v.brand || '').toLowerCase().includes(query) ||
+          (v.category || '').toLowerCase().includes(query)
       );
     }
 
@@ -87,12 +87,14 @@ export default function MotodexPage() {
     setFilteredVehicles(filtered);
   };
 
-  const parseHorsepower = (hpText: string): number => {
+  const parseHorsepower = (hpText: string | null): number => {
+    if (!hpText) return 0;
     const match = hpText.match(/[\d.]+/);
     return match ? parseFloat(match[0]) : 0;
   };
 
-  const formatPrice = (price: number): string => {
+  const formatPrice = (price: number | null): string => {
+    if (!price) return '-';
     return `NT$${price.toLocaleString('zh-TW')}`;
   };
 

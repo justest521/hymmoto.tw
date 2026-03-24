@@ -72,8 +72,8 @@ export default function UsedPage() {
   const filteredValuations = valuations.filter((item) => {
     const search = searchTerm.toLowerCase();
     return (
-      item.brand.toLowerCase().includes(search) ||
-      item.model_name.toLowerCase().includes(search)
+      (item.brand || '').toLowerCase().includes(search) ||
+      (item.model_name || '').toLowerCase().includes(search)
     );
   });
 
@@ -85,7 +85,7 @@ export default function UsedPage() {
   // Get recent valuations for display
   const recentValuations = filteredValuations
     .slice(0, 20)
-    .sort((a, b) => b.buy_year - a.buy_year);
+    .sort((a, b) => (b.buy_year || 0) - (a.buy_year || 0));
 
   return (
     <div
