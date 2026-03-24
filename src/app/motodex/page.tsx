@@ -7,16 +7,16 @@ interface VehicleSpec {
   id: number;
   brand: string;
   model_name: string;
-  displacement_cc: number;
-  max_horsepower: string;
-  max_torque: string;
-  wet_weight_kg: number;
-  msrp: number;
-  category: string;
-  seat_height_mm: number;
-  fuel_tank_l: number;
-  image_url: string;
-  features: string[];
+  displacement_cc: number | null;
+  max_horsepower: string | null;
+  max_torque: string | null;
+  wet_weight_kg: number | null;
+  msrp: number | null;
+  category: string | null;
+  seat_height_mm: number | null;
+  fuel_tank_l: number | null;
+  image_url: string | null;
+  features: string[] | null;
 }
 
 export default function MotodexPage() {
@@ -259,22 +259,24 @@ export default function MotodexPage() {
                           {vehicle.model_name}
                         </h2>
                         <p style={{ fontSize: '12px', marginBottom: '16px', color: '#928374', margin: '4px 0 16px 0' }}>
-                          {vehicle.brand} | {vehicle.category}
+                          {vehicle.brand}{vehicle.category ? ` | ${vehicle.category}` : ''}
                         </p>
 
                         {/* Stats Section */}
                         <div style={{ fontSize: '12px', color: '#ebdbb2' }}>
                           {/* Displacement */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ color: '#928374' }}>displacement</span>
-                            <span>{vehicle.displacement_cc} cc</span>
-                          </div>
+                          {vehicle.displacement_cc != null && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ color: '#928374' }}>displacement</span>
+                              <span>{vehicle.displacement_cc} cc</span>
+                            </div>
+                          )}
 
                           {/* Horsepower with Bar */}
                           <div style={{ marginBottom: '8px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                               <span style={{ color: '#928374' }}>horsepower</span>
-                              <span>{hp} hp</span>
+                              <span>{hp || '—'} hp</span>
                             </div>
                             <div style={{ color: '#b8f53e', letterSpacing: '0px', fontFamily: "'JetBrains Mono', monospace" }}>
                               {renderHpBar(hp)}
@@ -282,16 +284,20 @@ export default function MotodexPage() {
                           </div>
 
                           {/* Torque */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ color: '#928374' }}>torque</span>
-                            <span>{vehicle.max_torque}</span>
-                          </div>
+                          {vehicle.max_torque != null && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ color: '#928374' }}>torque</span>
+                              <span>{vehicle.max_torque}</span>
+                            </div>
+                          )}
 
                           {/* Weight */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ color: '#928374' }}>wet_weight</span>
-                            <span>{vehicle.wet_weight_kg} kg</span>
-                          </div>
+                          {vehicle.wet_weight_kg != null && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <span style={{ color: '#928374' }}>wet_weight</span>
+                              <span>{vehicle.wet_weight_kg} kg</span>
+                            </div>
+                          )}
 
                           {/* Price */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #3c3836', marginBottom: '8px' }}>
@@ -302,12 +308,16 @@ export default function MotodexPage() {
                           </div>
 
                           {/* Additional Info */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', paddingTop: '8px', color: '#928374', marginBottom: '4px' }}>
-                            <span>seat_height: {vehicle.seat_height_mm}mm</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#928374' }}>
-                            <span>fuel_tank: {vehicle.fuel_tank_l}L</span>
-                          </div>
+                          {vehicle.seat_height_mm != null && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', paddingTop: '8px', color: '#928374', marginBottom: '4px' }}>
+                              <span>seat_height: {vehicle.seat_height_mm}mm</span>
+                            </div>
+                          )}
+                          {vehicle.fuel_tank_l != null && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#928374' }}>
+                              <span>fuel_tank: {vehicle.fuel_tank_l}L</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Features */}

@@ -26,11 +26,11 @@ interface VehicleSpec {
 
 interface CPOValuation {
   id: number;
-  brand: string;
-  model_name: string;
-  used_price_min: number | null;
-  used_price_max: number | null;
-  [key: string]: any;
+  brand: string | null;
+  model_name: string | null;
+  buy_year: number | null;
+  price: number | null;
+  quantity: number | null;
 }
 
 interface RPGAttribute {
@@ -51,7 +51,7 @@ interface SimilarModel {
 const ModelPage = () => {
   const params = useParams();
   const [vehicle, setVehicle] = useState<VehicleSpec | null>(null);
-  const [cpoData, setCpoData] = useState<CPOValuation | null>(null);
+  const [cpoData, setCpoData] = useState<CPOValuation[]>([]);
   const [similarModels, setSimilarModels] = useState<SimilarModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -102,29 +102,48 @@ const ModelPage = () => {
         setOverallScore(calculatedAttributes.overallScore);
         setRank(calculatedAttributes.rank);
 
-        const { data: cpoData } = await supabase
+        const { data: cpoRows } = await supabase
           .from('cpo_valuations')
-          .select('*')
+          .select('id, brand, model_name, buy_year, price, quantity')
           .ilike('brand', vehicleData.brand)
-          .ilike('model_name', vehicleData.model_name)
-          .single();
+          .ilike('model_name', `%${vehicleData.model_name}%`)
+          .not('price', 'is', null)
+          .order('buy_year', { ascending: false })
+          .limit(20);
 
-        if (cpoData) {
-          setCpoData(cpoData);
+        if (cpoRows && cpoRows.length > 0) {
+          setCpoData(cpoRows as CPOValuation[]);
         }
 
+        // Fetch similar models: same brand OR similar displacement
         const cc = vehicleData.displacement_cc || 0;
-        const { data: similar } = await supabase
+        const { data: sameBrand } = await supabase
           .from('vehicle_specs')
-          .select('*')
-          .or(
-            `and(ilike(brand,${vehicleData.brand}),not.eq(id,${vehicleData.id})),and(displacement_cc.gte.${Math.max(0, cc - 100)},displacement_cc.lte.${cc + 100},not.eq(id,${vehicleData.id}))`
-          )
+          .select('id, brand, model_name, displacement_cc, max_horsepower, msrp')
+          .ilike('brand', vehicleData.brand)
+          .neq('id', vehicleData.id)
           .limit(4);
 
-        if (similar) {
-          setSimilarModels(similar);
+        const { data: similarCC } = await supabase
+          .from('vehicle_specs')
+          .select('id, brand, model_name, displacement_cc, max_horsepower, msrp')
+          .gte('displacement_cc', Math.max(0, cc - 100))
+          .lte('displacement_cc', cc + 100)
+          .neq('id', vehicleData.id)
+          .limit(4);
+
+        // Merge and deduplicate
+        const allSimilar = [...(sameBrand || []), ...(similarCC || [])];
+        const seen = new Set<number>();
+        const unique: SimilarModel[] = [];
+        for (const m of allSimilar) {
+          if (!seen.has(m.id)) {
+            seen.add(m.id);
+            unique.push(m as SimilarModel);
+          }
+          if (unique.length >= 4) break;
         }
+        setSimilarModels(unique);
 
         setLoading(false);
       } catch (err) {
@@ -503,14 +522,22 @@ const ModelPage = () => {
               </p>
             </div>
           )}
-          {cpoData && cpoData.used_price_min !== null && cpoData.used_price_max !== null && (
-            <div style={{ padding: '20px', backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', textAlign: 'center' }}>
-              <p style={{ fontSize: '11px', color: '#928374', margin: '0 0 8px 0', letterSpacing: '0.5px' }}>中古行情</p>
-              <p style={{ fontSize: '14px', color: '#fabd2f', fontWeight: 'bold', margin: '0', letterSpacing: '0.5px' }}>
-                NT${cpoData.used_price_min.toLocaleString()} - NT${cpoData.used_price_max.toLocaleString()}
-              </p>
-            </div>
-          )}
+          {cpoData.length > 0 && (() => {
+            const prices = cpoData.map(c => c.price).filter((p): p is number => p !== null);
+            const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+            const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
+            return minPrice !== null && maxPrice !== null ? (
+              <div style={{ padding: '20px', backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: '#928374', margin: '0 0 8px 0', letterSpacing: '0.5px' }}>中古行情</p>
+                <p style={{ fontSize: '14px', color: '#fabd2f', fontWeight: 'bold', margin: '0', letterSpacing: '0.5px' }}>
+                  NT${minPrice.toLocaleString()}{minPrice !== maxPrice ? ` - NT$${maxPrice.toLocaleString()}` : ''}
+                </p>
+                <p style={{ fontSize: '10px', color: '#928374', margin: '4px 0 0 0' }}>
+                  ({cpoData.length} 筆資料)
+                </p>
+              </div>
+            ) : null;
+          })()}
         </div>
       </section>
 

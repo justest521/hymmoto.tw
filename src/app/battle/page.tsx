@@ -7,19 +7,19 @@ interface VehicleSpec {
   id: string
   brand: string
   model_name: string
-  displacement_cc: number
-  max_horsepower: string
-  max_torque: string
-  wet_weight_kg: number
-  msrp: number
-  seat_height_mm: number
-  fuel_tank_l: number
-  front_brake: string
-  rear_brake: string
-  abs_type: string
-  cooling_system: string
-  engine_type: string
-  features: string[]
+  displacement_cc: number | null
+  max_horsepower: string | null
+  max_torque: string | null
+  wet_weight_kg: number | null
+  msrp: number | null
+  seat_height_mm: number | null
+  fuel_tank_l: number | null
+  front_brake: string | null
+  rear_brake: string | null
+  abs_type: string | null
+  cooling_system: string | null
+  engine_type: string | null
+  features: string[] | null
 }
 
 const COLORS = {
@@ -34,20 +34,22 @@ const COLORS = {
   blue: '#83a598',
 }
 
-const parseHorsepower = (text: string): number | null => {
-  const match = text.match(/(\d+(?:\.\d+)?)\s*hp/i)
+const parseHorsepower = (text: string | null): number | null => {
+  if (!text) return null
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:hp|ps|kw)/i)
   return match ? parseFloat(match[1]) : null
 }
 
-const parseTorque = (text: string): number | null => {
-  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:nm|n\/m)/i)
+const parseTorque = (text: string | null): number | null => {
+  if (!text) return null
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(?:nm|n\/m|kgf)/i)
   return match ? parseFloat(match[1]) : null
 }
 
-const createBar = (value: number, max: number, winner: boolean = false): string => {
-  const filled = Math.round((value / max) * 10)
+const createBar = (value: number | null, max: number | null, winner: boolean = false): string => {
+  if (value === null || value === undefined || max === null || max === 0) return '░'.repeat(10)
+  const filled = Math.min(10, Math.max(0, Math.round((value / max) * 10)))
   const empty = 10 - filled
-  const char = winner ? '█' : '░'
   return '█'.repeat(filled) + '░'.repeat(empty)
 }
 
@@ -91,8 +93,8 @@ const BattlePage = () => {
     return vehicles
       .filter(
         (v) =>
-          v.brand.toLowerCase().includes(q) ||
-          v.model_name.toLowerCase().includes(q)
+          (v.brand || '').toLowerCase().includes(q) ||
+          (v.model_name || '').toLowerCase().includes(q)
       )
       .slice(0, 8)
   }
@@ -126,14 +128,16 @@ const BattlePage = () => {
     isNumeric = false,
   }: {
     label: string
-    leftValue: string | number
-    rightValue: string | number
+    leftValue: string | number | null
+    rightValue: string | number | null
     unit?: string
     numeric?: boolean
     isNumeric?: boolean
   }) => {
     let leftWins = false
     let rightWins = false
+    const displayLeft = leftValue ?? '—'
+    const displayRight = rightValue ?? '—'
 
     if (isNumeric && typeof leftValue === 'number' && typeof rightValue === 'number') {
       leftWins = leftValue > rightValue
@@ -161,7 +165,7 @@ const BattlePage = () => {
               borderRadius: '4px',
             }}
           >
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{leftValue}</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{displayLeft}</div>
             {unit && <div style={{ fontSize: '12px', color: COLORS.muted }}>{unit}</div>}
           </div>
           <div
@@ -173,7 +177,7 @@ const BattlePage = () => {
               textAlign: 'right',
             }}
           >
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{rightValue}</div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{displayRight}</div>
             {unit && <div style={{ fontSize: '12px', color: COLORS.muted }}>{unit}</div>}
           </div>
         </div>
@@ -187,12 +191,14 @@ const BattlePage = () => {
     rightValue,
   }: {
     label: string
-    leftValue: number
-    rightValue: number
+    leftValue: number | null
+    rightValue: number | null
   }) => {
-    const maxValue = Math.max(leftValue, rightValue)
-    const leftWins = leftValue > rightValue
-    const rightWins = rightValue > leftValue
+    const lv = leftValue ?? 0
+    const rv = rightValue ?? 0
+    const maxValue = Math.max(lv, rv)
+    const leftWins = lv > rv
+    const rightWins = rv > lv
 
     return (
       <div style={{ borderBottom: `1px solid ${COLORS.border}` }}>
@@ -215,7 +221,7 @@ const BattlePage = () => {
                 color: leftWins ? COLORS.green : rightWins ? COLORS.red : COLORS.text,
               }}
             >
-              {createBar(leftValue, maxValue, leftWins)} {leftValue.toFixed(1)}
+              {createBar(leftValue, maxValue, leftWins)} {leftValue != null ? leftValue.toFixed(1) : '—'}
             </div>
           </div>
           <div>
@@ -227,7 +233,7 @@ const BattlePage = () => {
                 color: rightWins ? COLORS.green : leftWins ? COLORS.red : COLORS.text,
               }}
             >
-              {rightValue.toFixed(1)} {createBar(rightValue, maxValue, rightWins)}
+              {rightValue != null ? rightValue.toFixed(1) : '—'} {createBar(rightValue, maxValue, rightWins)}
             </div>
           </div>
         </div>
@@ -517,8 +523,8 @@ const BattlePage = () => {
 
                     <ComparisonValue
                       label="Price (NTD)"
-                      leftValue={leftSelected.msrp.toLocaleString()}
-                      rightValue={rightSelected.msrp.toLocaleString()}
+                      leftValue={leftSelected.msrp != null ? leftSelected.msrp.toLocaleString() : '—'}
+                      rightValue={rightSelected.msrp != null ? rightSelected.msrp.toLocaleString() : '—'}
                       isNumeric={true}
                     />
 
@@ -559,7 +565,7 @@ const BattlePage = () => {
                     />
 
                     <div style={{ padding: '12px 16px', color: COLORS.muted, fontSize: '12px' }}>
-                      Engine: {leftSelected.engine_type}
+                      Engine: {leftSelected.engine_type ?? '—'}
                     </div>
                   </div>
 
@@ -640,8 +646,8 @@ const BattlePage = () => {
 
                     <ComparisonValue
                       label="Price (NTD)"
-                      leftValue={leftSelected.msrp.toLocaleString()}
-                      rightValue={rightSelected.msrp.toLocaleString()}
+                      leftValue={leftSelected.msrp != null ? leftSelected.msrp.toLocaleString() : '—'}
+                      rightValue={rightSelected.msrp != null ? rightSelected.msrp.toLocaleString() : '—'}
                       isNumeric={true}
                     />
 
@@ -682,7 +688,7 @@ const BattlePage = () => {
                     />
 
                     <div style={{ padding: '12px 16px', color: COLORS.muted, fontSize: '12px' }}>
-                      Engine: {rightSelected.engine_type}
+                      Engine: {rightSelected.engine_type ?? '—'}
                     </div>
                   </div>
                 </div>
