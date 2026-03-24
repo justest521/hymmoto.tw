@@ -1,72 +1,168 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
 
 function bar(value: number, max: number, width: number = 20): string {
+  if (max === 0) return '░'.repeat(width)
   const filled = Math.round((value / max) * width)
   const empty = width - filled
   return '█'.repeat(filled) + '░'.repeat(empty)
 }
 
-// CJK-aware pad: Chinese chars are double-width in monospace
-function visualWidth(str: string): number {
-  let w = 0
-  for (const ch of str) {
-    w += ch.charCodeAt(0) > 0x7f ? 2 : 1
-  }
-  return w
+// Brand name mapping: Chinese → English
+const brandMap: Record<string, string> = {
+  '三陽': 'SYM', '光陽': 'KYMCO', '山葉': 'YAMAHA', '睿能': 'GOGORO',
+  '鈴木': 'SUZUKI', '比雅久': 'PGO', '宏佳騰': 'AEON', '威速登': 'VESTON',
+  '中華': 'CMC', '其他': 'OTHER',
+  'HONDA': 'HONDA', 'KAWASAKI': 'KAWASAKI', 'PLAGGIO': 'PIAGGIO',
+  'TRIUMPH': 'TRIUMPH', 'APRILIA': 'APRILIA', 'BMW': 'BMW',
+  'DUCATI': 'DUCATI', 'KTM': 'KTM', 'HUSQVARNA': 'HUSQVARNA',
+  'CFMOTO': 'CFMOTO', 'INDIAN': 'INDIAN', 'MOTO GUZZI': 'MOTO GUZZI',
+  'HARLEY-DAVIDSON': 'HARLEY',
 }
 
-function padEndCJK(str: string, len: number): string {
-  const diff = len - visualWidth(str)
-  return diff > 0 ? str + ' '.repeat(diff) : str
-}
+interface BrandData { name: string; share: number; sales: number }
+interface ModelData { rank: number; model: string; sales: number }
+interface TierData { label: string; leader: string; sales: number; total: number }
 
 const DataPage: React.FC = () => {
-  const brands = [
-    { name: 'KYMCO',    share: 28.3, sales: 5420 },
-    { name: 'YAMAHA',   share: 24.1, sales: 4615 },
-    { name: 'SYM',      share: 18.7, sales: 3581 },
-    { name: 'GOGORO',   share: 8.2,  sales: 1571 },
-    { name: 'HONDA',    share: 7.5,  sales: 1437 },
-    { name: 'SUZUKI',   share: 3.8,  sales: 728 },
-    { name: 'KAWASAKI', share: 2.9,  sales: 556 },
-    { name: 'BMW',      share: 1.8,  sales: 345 },
-    { name: 'DUCATI',   share: 1.2,  sales: 230 },
-    { name: 'KTM',      share: 1.1,  sales: 211 },
-    { name: 'AEON',     share: 1.5,  sales: 287 },
-    { name: 'TRIUMPH',  share: 0.9,  sales: 172 },
-  ];
+  const [brands, setBrands] = useState<BrandData[]>([])
+  const [topModels, setTopModels] = useState<ModelData[]>([])
+  const [ccTiers, setCcTiers] = useState<TierData[]>([])
+  const [stats, setStats] = useState({ totalSales: 0, brandCount: 0, modelCount: 0, latestMonth: '' })
+  const [loading, setLoading] = useState(true)
 
-  const topModels = [
-    { rank: 1,  model: 'KYMCO 新K1 150',       sales: 2202 },
-    { rank: 2,  model: 'YAMAHA FORCE 2.0',      sales: 1891 },
-    { rank: 3,  model: 'SYM JET SL+',           sales: 1756 },
-    { rank: 4,  model: 'KYMCO GP125',            sales: 1698 },
-    { rank: 5,  model: 'YAMAHA LIMI 125',        sales: 1542 },
-    { rank: 6,  model: 'SYM 迪爵 DUKE 125',     sales: 1489 },
-    { rank: 7,  model: 'GOGORO VIVA MIX',        sales: 1356 },
-    { rank: 8,  model: 'KYMCO MANY 125',         sales: 1298 },
-    { rank: 9,  model: 'HONDA SUPER CUB 50',     sales: 1245 },
-    { rank: 10, model: 'YAMAHA CYGNUS GRYPHUS',  sales: 1201 },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient()
 
-  const ccTiers = [
-    { label: '≤50cc',     leader: 'HONDA SUPER CUB 50', sales: 1245, total: 3200 },
-    { label: '100-115cc', leader: 'SYM WOO 115',        sales: 1286, total: 4100 },
-    { label: '125cc',     leader: 'SYM 迪爵 DUKE 125',  sales: 2061, total: 8500 },
-    { label: '150-250cc', leader: 'KYMCO 新K1 150',     sales: 2202, total: 5800 },
-    { label: '300-400cc', leader: 'KAWASAKI NINJA 400',  sales: 876,  total: 1900 },
-    { label: '500cc+',    leader: 'YAMAHA MT-07',        sales: 987,  total: 2100 },
-  ];
+      // 1. Get latest month from sales_brand_monthly
+      const { data: monthData } = await supabase
+        .from('sales_brand_monthly')
+        .select('year_month')
+        .order('year_month', { ascending: false })
+        .limit(1)
 
-  const maxShare = brands[0].share;
-  const maxSales = topModels[0].sales;
+      const latestBrandMonth = monthData?.[0]?.year_month || '2026-03'
+
+      // 2. Brand market share
+      const { data: brandData } = await supabase
+        .from('sales_brand_monthly')
+        .select('brand, total, market_share')
+        .eq('year_month', latestBrandMonth)
+        .order('total', { ascending: false })
+
+      if (brandData) {
+        const mapped = brandData
+          .filter(b => b.total > 0)
+          .map(b => ({
+            name: brandMap[b.brand] || b.brand,
+            share: parseFloat(b.market_share) || 0,
+            sales: b.total,
+          }))
+        setBrands(mapped)
+      }
+
+      // 3. Get latest month from vehicle_monthly_sales
+      const { data: modelMonthData } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('year_month')
+        .order('year_month', { ascending: false })
+        .limit(1)
+
+      const latestModelMonth = modelMonthData?.[0]?.year_month || '2026-02'
+
+      // 4. Top 10 models
+      const { data: modelData } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('brand, model_code, display_name, total_sales, displacement')
+        .eq('year_month', latestModelMonth)
+        .gt('total_sales', 0)
+        .order('total_sales', { ascending: false })
+        .limit(10)
+
+      if (modelData) {
+        setTopModels(modelData.map((m, i) => ({
+          rank: i + 1,
+          model: `${m.brand} ${m.display_name || m.model_code}`,
+          sales: m.total_sales || 0,
+        })))
+
+        // 5. CC tier aggregation from same query but all models
+        const { data: allModels } = await supabase
+          .from('vehicle_monthly_sales')
+          .select('brand, display_name, model_code, total_sales, displacement')
+          .eq('year_month', latestModelMonth)
+          .gt('total_sales', 0)
+          .order('total_sales', { ascending: false })
+
+        if (allModels) {
+          const tierDefs = [
+            { label: '電動機車', match: (d: string | null) => d === '電動機車' },
+            { label: '≤50cc', match: (d: string | null) => d === '≤50cc' },
+            { label: '100-115cc', match: (d: string | null) => d === '100-115cc' },
+            { label: '125cc', match: (d: string | null) => d === '125cc' },
+            { label: '150-250cc', match: (d: string | null) => d === '150-250cc' || d === '150cc' || d === '250cc' },
+            { label: '251cc+', match: (d: string | null) => d === '251-550cc' || d === '551-1000cc' || d === '1000cc+' || d === '300cc+' },
+          ]
+
+          const tiers: TierData[] = tierDefs.map(td => {
+            const models = allModels.filter(m => td.match(m.displacement))
+            const total = models.reduce((s, m) => s + (m.total_sales || 0), 0)
+            const top = models[0]
+            return {
+              label: td.label,
+              leader: top ? `${top.brand} ${top.display_name || top.model_code}` : '-',
+              sales: top?.total_sales || 0,
+              total,
+            }
+          }).filter(t => t.total > 0)
+
+          setCcTiers(tiers)
+        }
+      }
+
+      // 6. Stats
+      const totalSales = brandData?.reduce((s, b) => s + b.total, 0) || 0
+      const brandCount = brandData?.filter(b => b.total > 0).length || 0
+
+      const { count: modelCount } = await supabase
+        .from('vehicle_specs')
+        .select('id', { count: 'exact', head: true })
+
+      setStats({
+        totalSales,
+        brandCount,
+        modelCount: modelCount || 566,
+        latestMonth: latestBrandMonth,
+      })
+
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [])
+
+  const maxShare = brands[0]?.share || 1
+  const maxSales = topModels[0]?.sales || 1
 
   const mono: React.CSSProperties = {
     fontFamily: "'JetBrains Mono', monospace",
-  };
+  }
+
+  if (loading) {
+    return (
+      <div style={{
+        backgroundColor: '#1d2021', color: '#b8f53e', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: '14px',
+      }}>
+        Loading data from Supabase...
+      </div>
+    )
+  }
 
   return (
     <div style={{
@@ -87,7 +183,7 @@ const DataPage: React.FC = () => {
             DATA CENTER
           </h1>
           <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
-            台灣機車市場即時數據分析平台 · 2026-03
+            台灣機車市場即時數據分析平台 · {stats.latestMonth}
           </div>
         </div>
 
@@ -99,10 +195,10 @@ const DataPage: React.FC = () => {
           marginBottom: '40px',
         }}>
           {[
-            { label: 'TOTAL SALES', value: '190,938', sym: '>>' },
-            { label: 'BRANDS', value: '32+', sym: '>_' },
-            { label: 'MODELS', value: '566+', sym: '::' },
-            { label: 'LATEST', value: '2026-03', sym: '$>' },
+            { label: 'TOTAL SALES', value: stats.totalSales.toLocaleString(), sym: '>>' },
+            { label: 'BRANDS', value: `${stats.brandCount}`, sym: '>_' },
+            { label: 'MODELS', value: `${stats.modelCount}+`, sym: '::' },
+            { label: 'LATEST', value: stats.latestMonth, sym: '$>' },
           ].map((s, i) => (
             <div key={i} style={{
               backgroundColor: '#282828',
@@ -117,7 +213,7 @@ const DataPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Brand Market Share - Terminal Progress Bars */}
+        {/* Brand Market Share */}
         <section style={{ marginBottom: '40px' }}>
           <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
             $ <span style={{ color: '#b8f53e' }}>brand --market-share</span>
@@ -129,7 +225,7 @@ const DataPage: React.FC = () => {
             padding: '20px',
           }}>
             <div style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '14px', marginBottom: '16px', letterSpacing: '1px' }}>
-              BRAND MARKET SHARE · 2026-03
+              BRAND MARKET SHARE · {stats.latestMonth}
             </div>
             <div style={{ ...mono, fontSize: '13px', whiteSpace: 'pre', lineHeight: '1.8' }}>
               {brands.map((b, i) => (
@@ -139,10 +235,10 @@ const DataPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Top 10 Sales - Terminal Table */}
+        {/* Top 10 Sales */}
         <section style={{ marginBottom: '40px' }}>
           <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
-            $ <span style={{ color: '#b8f53e' }}>top 10 --month 2026-03</span>
+            $ <span style={{ color: '#b8f53e' }}>top 10 --month {stats.latestMonth}</span>
           </div>
           <div style={{
             backgroundColor: '#282828',
@@ -205,7 +301,7 @@ const DataPage: React.FC = () => {
                 </div>
                 <div style={{ fontSize: '12px', whiteSpace: 'pre', color: '#b8f53e' }}>
                   {bar(tier.sales, tier.total, 24)}{' '}
-                  <span style={{ color: '#928374' }}>{Math.round((tier.sales / tier.total) * 100)}%</span>
+                  <span style={{ color: '#928374' }}>{tier.total > 0 ? Math.round((tier.sales / tier.total) * 100) : 0}%</span>
                 </div>
               </div>
             ))}

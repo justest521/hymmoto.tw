@@ -1,49 +1,120 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
 
 function bar(value: number, max: number, width: number = 16): string {
+  if (max === 0) return '░'.repeat(width)
   const filled = Math.round((value / max) * width)
   const empty = width - filled
   return '█'.repeat(filled) + '░'.repeat(empty)
 }
 
-function visualWidth(str: string): number {
-  let w = 0
-  for (const ch of str) { w += ch.charCodeAt(0) > 0x7f ? 2 : 1 }
-  return w
-}
-
-function padEndCJK(str: string, len: number): string {
-  const diff = len - visualWidth(str)
-  return diff > 0 ? str + ' '.repeat(diff) : str
-}
+interface SalesItem { rank: number; model: string; sales: number }
+interface SpecItem { rank: number; model: string; hp: string; msrp: number; score: number }
 
 export default function RankingsPage() {
-  const salesTop = [
-    { rank: 1,  model: 'KYMCO 新K1 150',       sales: 2202 },
-    { rank: 2,  model: 'YAMAHA FORCE 2.0',      sales: 1891 },
-    { rank: 3,  model: 'SYM JET SL+',           sales: 1756 },
-    { rank: 4,  model: 'KYMCO GP125',            sales: 1698 },
-    { rank: 5,  model: 'YAMAHA LIMI 125',        sales: 1542 },
-  ];
+  const [salesTop, setSalesTop] = useState<SalesItem[]>([])
+  const [powerTop, setPowerTop] = useState<SpecItem[]>([])
+  const [valueTop, setValueTop] = useState<SpecItem[]>([])
+  const [latestMonth, setLatestMonth] = useState('')
+  const [loading, setLoading] = useState(true)
 
-  const powerTop = [
-    { rank: 1, model: 'DUCATI PANIGALE V4',  hp: 215 },
-    { rank: 2, model: 'APRILIA RSV4',        hp: 210 },
-    { rank: 3, model: 'BMW S1000RR',         hp: 205 },
-    { rank: 4, model: 'KAWASAKI ZX-10R',     hp: 203 },
-    { rank: 5, model: 'YAMAHA YZF-R1',       hp: 200 },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient()
 
-  const valueTop = [
-    { rank: 1, model: 'YAMAHA MT-07',       score: 9.2 },
-    { rank: 2, model: 'KAWASAKI NINJA 400', score: 9.0 },
-    { rank: 3, model: 'SYM JET SL+',        score: 8.8 },
-    { rank: 4, model: 'HONDA CB500F',       score: 8.7 },
-    { rank: 5, model: 'KTM 390 DUKE',       score: 8.5 },
-  ];
+      // 1. Sales King - from vehicle_monthly_sales
+      const { data: monthData } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('year_month')
+        .order('year_month', { ascending: false })
+        .limit(1)
 
+      const month = monthData?.[0]?.year_month || '2026-02'
+      setLatestMonth(month)
+
+      const { data: salesData } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('brand, model_code, display_name, total_sales')
+        .eq('year_month', month)
+        .gt('total_sales', 0)
+        .order('total_sales', { ascending: false })
+        .limit(5)
+
+      if (salesData) {
+        setSalesTop(salesData.map((m, i) => ({
+          rank: i + 1,
+          model: `${m.brand} ${m.display_name || m.model_code}`,
+          sales: m.total_sales || 0,
+        })))
+      }
+
+      // 2. Power King - from vehicle_specs (max_horsepower)
+      const { data: powerData } = await supabase
+        .from('vehicle_specs')
+        .select('brand, model_name, max_horsepower, msrp')
+        .not('max_horsepower', 'is', null)
+        .order('displacement_cc', { ascending: false })
+        .limit(50)
+
+      if (powerData) {
+        const sorted = powerData
+          .map(p => {
+            const hpMatch = p.max_horsepower?.match(/[\d.]+/)
+            return { ...p, hpNum: hpMatch ? parseFloat(hpMatch[0]) : 0 }
+          })
+          .filter(p => p.hpNum > 0)
+          .sort((a, b) => b.hpNum - a.hpNum)
+          .slice(0, 5)
+
+        setPowerTop(sorted.map((p, i) => ({
+          rank: i + 1,
+          model: `${p.brand} ${p.model_name}`,
+          hp: p.max_horsepower || '',
+          msrp: p.msrp || 0,
+          score: 0,
+        })))
+      }
+
+      // 3. Value King - specs with msrp and horsepower, compute hp-per-dollar score
+      const { data: valueData } = await supabase
+        .from('vehicle_specs')
+        .select('brand, model_name, max_horsepower, msrp, displacement_cc')
+        .not('max_horsepower', 'is', null)
+        .not('msrp', 'is', null)
+        .gt('msrp', 0)
+
+      if (valueData) {
+        const scored = valueData
+          .map(v => {
+            const hpMatch = v.max_horsepower?.match(/[\d.]+/)
+            const hp = hpMatch ? parseFloat(hpMatch[0]) : 0
+            // Score: HP per 10k NTD, weighted by displacement accessibility
+            const hpPerPrice = hp > 0 && v.msrp > 0 ? (hp / (v.msrp / 10000)) : 0
+            return { ...v, hp, hpPerPrice, score: Math.min(hpPerPrice * 0.8, 10) }
+          })
+          .filter(v => v.hpPerPrice > 0 && v.msrp < 800000) // exclude ultra-premium
+          .sort((a, b) => b.hpPerPrice - a.hpPerPrice)
+          .slice(0, 5)
+
+        setValueTop(scored.map((v, i) => ({
+          rank: i + 1,
+          model: `${v.brand} ${v.model_name}`,
+          hp: '',
+          msrp: v.msrp,
+          score: parseFloat(v.score.toFixed(1)),
+        })))
+      }
+
+      setLoading(false)
+    }
+
+    fetchData()
+  }, [])
+
+  // Trending stays mock for now (needs social data source)
   const trendingTop = [
     { rank: 1, model: 'GOGORO CROSSOVER',   mentions: 12800 },
     { rank: 2, model: 'YAMAHA MT-09 SP',    mentions: 9650 },
@@ -51,6 +122,21 @@ export default function RankingsPage() {
     { rank: 4, model: 'KTM 990 DUKE',       mentions: 7200 },
     { rank: 5, model: 'HONDA TRANSALP',     mentions: 6100 },
   ];
+
+  const maxSales = salesTop[0]?.sales || 1
+  const maxHp = powerTop[0]?.hp ? parseFloat(powerTop[0].hp) : 1
+
+  if (loading) {
+    return (
+      <div style={{
+        backgroundColor: '#1d2021', color: '#b8f53e', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: "'JetBrains Mono', monospace", fontSize: '14px',
+      }}>
+        Loading rankings from Supabase...
+      </div>
+    )
+  }
 
   return (
     <div style={{
@@ -71,7 +157,7 @@ export default function RankingsPage() {
             RANKINGS
           </h1>
           <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
-            多維度車款排名系統 · 2026-03
+            多維度車款排名系統 · {latestMonth}
           </div>
         </div>
 
@@ -95,7 +181,7 @@ export default function RankingsPage() {
                   <span style={{ flex: '0 0 170px' }}>{m.model}</span>
                   <span style={{ width: '50px', textAlign: 'right', color: '#fabd2f' }}>{m.sales.toLocaleString()}</span>
                   <span style={{ width: '8px' }}></span>
-                  <span>{bar(m.sales, 2202)}</span>
+                  <span>{bar(m.sales, maxSales)}</span>
                 </div>
               ))}
             </div>
@@ -111,16 +197,19 @@ export default function RankingsPage() {
               <Link href="/rankings/power" style={{ color: '#fabd2f', fontSize: '11px', textDecoration: 'none' }}>VIEW ALL →</Link>
             </div>
             <div style={{ fontSize: '12px', lineHeight: '2' }}>
-              {powerTop.map((m, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{ width: '28px', textAlign: 'right', color: '#928374' }}>#{m.rank}</span>
-                  <span style={{ width: '8px' }}></span>
-                  <span style={{ flex: '0 0 170px' }}>{m.model}</span>
-                  <span style={{ width: '50px', textAlign: 'right', color: '#fabd2f' }}>{m.hp}hp</span>
-                  <span style={{ width: '8px' }}></span>
-                  <span>{bar(m.hp, 215)}</span>
-                </div>
-              ))}
+              {powerTop.map((m, i) => {
+                const hpNum = parseFloat(m.hp) || 0
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ width: '28px', textAlign: 'right', color: '#928374' }}>#{m.rank}</span>
+                    <span style={{ width: '8px' }}></span>
+                    <span style={{ flex: '0 0 170px' }}>{m.model}</span>
+                    <span style={{ width: '50px', textAlign: 'right', color: '#fabd2f' }}>{hpNum}hp</span>
+                    <span style={{ width: '8px' }}></span>
+                    <span>{bar(hpNum, maxHp)}</span>
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -171,7 +260,7 @@ export default function RankingsPage() {
           </div>
         </div>
 
-        {/* Summary Stats */}
+        {/* Summary */}
         <div style={{
           backgroundColor: '#282828',
           border: '1px solid #3c3836',
@@ -183,17 +272,15 @@ export default function RankingsPage() {
             $ <span style={{ color: '#b8f53e' }}>rankings --summary</span>
           </div>
           <div style={{ fontSize: '13px', lineHeight: '1.8', color: '#ebdbb2', whiteSpace: 'pre', fontFamily: 'inherit' }}>
-            <div>{'  本月銷售冠軍    KYMCO 新K1 150        2,202 台'}</div>
-            <div>{'  動力最強車款    DUCATI PANIGALE V4      215 HP'}</div>
-            <div>{'  最高CP值       YAMAHA MT-07            9.2/10'}</div>
-            <div>{'  最熱議車款     GOGORO CROSSOVER       12,800 則'}</div>
+            <div>{`  本月銷售冠軍    ${salesTop[0]?.model || '-'}    ${salesTop[0]?.sales.toLocaleString() || '0'} 台`}</div>
+            <div>{`  動力最強車款    ${powerTop[0]?.model || '-'}    ${powerTop[0]?.hp || '-'}`}</div>
+            <div>{`  最高CP值       ${valueTop[0]?.model || '-'}    ${valueTop[0]?.score.toFixed(1) || '-'}/10`}</div>
             <div style={{ color: '#504945' }}>{'  ' + '─'.repeat(52)}</div>
-            <div>{'  資料更新時間    2026-03-24'}</div>
-            <div>{'  資料來源       公路局 · 社群分析 · AI 評分'}</div>
+            <div>{`  資料更新月份    ${latestMonth}`}</div>
+            <div>{'  資料來源       公路局 · vehicle_specs · AI 評分'}</div>
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ textAlign: 'center', color: '#665c54', fontSize: '11px', paddingBottom: '20px' }}>
           guest@hymmoto.tw:~$ <span style={{ color: '#928374' }}>排行榜每月自動更新</span>
         </div>
