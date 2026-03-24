@@ -109,251 +109,267 @@ export default function MotodexPage() {
   const hasMore = displayCount < filteredVehicles.length;
 
   return (
-    <main className="min-h-screen p-6" style={{ backgroundColor: '#1d2021', fontFamily: '"JetBrains Mono", monospace' }}>
-      <style>{`
-        * {
-          font-family: "JetBrains Mono", monospace;
-        }
-
-        body {
-          background-color: #1d2021;
-          color: #ebdbb2;
-        }
-
-        input, button {
-          font-family: "JetBrains Mono", monospace;
-        }
-
-        /* Chinese text font */
-        .chinese-text {
-          font-family: "Noto Sans TC", "JetBrains Mono", monospace;
-        }
-      `}</style>
-
-      {/* Terminal Header */}
-      <div className="mb-8 border-b-2 pb-4" style={{ borderColor: '#3c3836' }}>
-        <div className="text-sm mb-2" style={{ color: '#928374' }}>
-          guest@hymmoto.tw:~$
+    <main style={{ backgroundColor: '#1d2021', color: '#ebdbb2', fontFamily: "'JetBrains Mono', monospace", minHeight: '100vh', padding: '30px 24px' }}>
+      {/* Outer container with max-width constraint */}
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        {/* Terminal Header */}
+        <div style={{ marginBottom: '40px', borderBottom: '1px solid #3c3836', paddingBottom: '20px' }}>
+          <div style={{ color: '#928374', fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: '#b8f53e' }}>motodex --browse</span>
+          </div>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#ebdbb2', margin: 0, letterSpacing: '2px' }}>
+            MOTODEX
+          </h1>
+          <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            車款圖鑑 · 台灣機車完整規格百科
+          </div>
         </div>
-        <div className="text-lg font-bold" style={{ color: '#b8f53e' }}>
-          motodex --browse
-        </div>
-      </div>
 
-      {/* Title and Subtitle */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2" style={{ color: '#b8f53e' }}>
-          MOTODEX / <span className="chinese-text">車款圖鑑</span>
-        </h1>
-        <p className="text-sm" style={{ color: '#928374' }}>
-          <span className="chinese-text">台灣機車完整規格百科 · 566+ 車款</span>
-        </p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="$ search model / brand / category..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setDisplayCount(12);
-          }}
-          className="w-full px-4 py-3 text-sm border-2"
-          style={{
-            backgroundColor: '#282828',
-            borderColor: '#3c3836',
-            color: '#ebdbb2',
-          }}
-        />
-      </div>
-
-      {/* Brand Filter Buttons */}
-      <div className="mb-8">
-        <div className="text-xs mb-3" style={{ color: '#928374' }}>
-          [BRAND_FILTER]
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => {
-              setSelectedBrand(null);
+        {/* Search Bar */}
+        <div style={{ marginBottom: '24px' }}>
+          <input
+            type="text"
+            placeholder="$ search model / brand / category..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
               setDisplayCount(12);
             }}
-            className="px-4 py-2 text-sm border-2 font-bold transition-colors"
             style={{
-              backgroundColor: selectedBrand === null ? '#b8f53e' : '#282828',
-              borderColor: '#3c3836',
-              color: selectedBrand === null ? '#1d2021' : '#b8f53e',
+              width: '100%',
+              maxWidth: '500px',
+              padding: '12px 16px',
+              backgroundColor: '#282828',
+              border: '1px solid #3c3836',
+              color: '#ebdbb2',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '14px',
+              borderRadius: '4px',
+              boxSizing: 'border-box',
             }}
-          >
-            ALL
-          </button>
-          {brands.map((brand) => (
+          />
+        </div>
+
+        {/* Brand Filter Buttons */}
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
+            [BRAND_FILTER]
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             <button
-              key={brand}
               onClick={() => {
-                setSelectedBrand(brand);
+                setSelectedBrand(null);
                 setDisplayCount(12);
               }}
-              className="px-4 py-2 text-sm border-2 transition-colors"
               style={{
-                backgroundColor: selectedBrand === brand ? '#b8f53e' : '#282828',
-                borderColor: '#3c3836',
-                color: selectedBrand === brand ? '#1d2021' : '#b8f53e',
+                padding: '8px 16px',
+                fontSize: '14px',
+                border: '1px solid #3c3836',
+                fontWeight: 'bold',
+                backgroundColor: selectedBrand === null ? '#b8f53e' : '#282828',
+                color: selectedBrand === null ? '#1d2021' : '#b8f53e',
+                cursor: 'pointer',
+                fontFamily: "'JetBrains Mono', monospace",
+                borderRadius: '4px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (selectedBrand === null) {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
               }}
             >
-              {brand}
+              ALL
             </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-12" style={{ color: '#928374' }}>
-          <div className="text-sm">
-            [LOADING] initializing motodex database...
+            {brands.map((brand) => (
+              <button
+                key={brand}
+                onClick={() => {
+                  setSelectedBrand(brand);
+                  setDisplayCount(12);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  border: '1px solid #3c3836',
+                  backgroundColor: selectedBrand === brand ? '#b8f53e' : '#282828',
+                  color: selectedBrand === brand ? '#1d2021' : '#b8f53e',
+                  cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  borderRadius: '4px',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedBrand !== brand) {
+                    e.currentTarget.style.backgroundColor = '#3c3836';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = selectedBrand === brand ? '#b8f53e' : '#282828';
+                }}
+              >
+                {brand}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* Vehicle Grid */}
-      {!loading && (
-        <>
-          <div className="mb-4 text-xs" style={{ color: '#928374' }}>
-            [ RESULTS: {filteredVehicles.length} / {vehicles.length} ]
-          </div>
-
-          {filteredVehicles.length === 0 ? (
-            <div className="text-center py-12" style={{ color: '#928374' }}>
-              <div className="text-sm">
-                [ERROR] no vehicles matching query
-              </div>
+        {/* Loading State */}
+        {loading && (
+          <div style={{ textAlign: 'center', paddingTop: '48px', paddingBottom: '48px', color: '#928374' }}>
+            <div style={{ fontSize: '14px' }}>
+              [LOADING] initializing motodex database...
             </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                {displayedVehicles.map((vehicle) => {
-                  const hp = parseHorsepower(vehicle.max_horsepower);
-                  return (
-                    <div
-                      key={vehicle.id}
-                      className="p-4 border-2"
+          </div>
+        )}
+
+        {/* Vehicle Grid */}
+        {!loading && (
+          <>
+            <div style={{ marginBottom: '16px', fontSize: '12px', color: '#928374' }}>
+              [ RESULTS: {filteredVehicles.length} / {vehicles.length} ]
+            </div>
+
+            {filteredVehicles.length === 0 ? (
+              <div style={{ textAlign: 'center', paddingTop: '48px', paddingBottom: '48px', color: '#928374' }}>
+                <div style={{ fontSize: '14px' }}>
+                  [ERROR] no vehicles matching query
+                </div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+                  {displayedVehicles.map((vehicle) => {
+                    const hp = parseHorsepower(vehicle.max_horsepower);
+                    return (
+                      <div
+                        key={vehicle.id}
+                        style={{
+                          backgroundColor: '#282828',
+                          border: '1px solid #3c3836',
+                          borderRadius: '4px',
+                          padding: '16px',
+                        }}
+                      >
+                        {/* Model Name and Brand */}
+                        <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px', color: '#b8f53e', margin: 0 }}>
+                          {vehicle.model_name}
+                        </h2>
+                        <p style={{ fontSize: '12px', marginBottom: '16px', color: '#928374', margin: '4px 0 16px 0' }}>
+                          {vehicle.brand} | {vehicle.category}
+                        </p>
+
+                        {/* Stats Section */}
+                        <div style={{ fontSize: '12px', color: '#ebdbb2' }}>
+                          {/* Displacement */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ color: '#928374' }}>displacement</span>
+                            <span>{vehicle.displacement_cc} cc</span>
+                          </div>
+
+                          {/* Horsepower with Bar */}
+                          <div style={{ marginBottom: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ color: '#928374' }}>horsepower</span>
+                              <span>{hp} hp</span>
+                            </div>
+                            <div style={{ color: '#b8f53e', letterSpacing: '0px', fontFamily: "'JetBrains Mono', monospace" }}>
+                              {renderHpBar(hp)}
+                            </div>
+                          </div>
+
+                          {/* Torque */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ color: '#928374' }}>torque</span>
+                            <span>{vehicle.max_torque}</span>
+                          </div>
+
+                          {/* Weight */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                            <span style={{ color: '#928374' }}>wet_weight</span>
+                            <span>{vehicle.wet_weight_kg} kg</span>
+                          </div>
+
+                          {/* Price */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #3c3836', marginBottom: '8px' }}>
+                            <span style={{ color: '#928374' }}>msrp</span>
+                            <span style={{ color: '#fabd2f' }}>
+                              {formatPrice(vehicle.msrp)}
+                            </span>
+                          </div>
+
+                          {/* Additional Info */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', paddingTop: '8px', color: '#928374', marginBottom: '4px' }}>
+                            <span>seat_height: {vehicle.seat_height_mm}mm</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#928374' }}>
+                            <span>fuel_tank: {vehicle.fuel_tank_l}L</span>
+                          </div>
+                        </div>
+
+                        {/* Features */}
+                        {vehicle.features && vehicle.features.length > 0 && (
+                          <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #3c3836' }}>
+                            <div style={{ fontSize: '12px', marginBottom: '8px', color: '#83a598' }}>
+                              [FEATURES]
+                            </div>
+                            <div style={{ fontSize: '12px' }}>
+                              {vehicle.features.map((feature, idx) => (
+                                <div key={idx} style={{ color: '#928374', marginBottom: '4px' }}>
+                                  - {feature}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Load More Button */}
+                {hasMore && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
+                    <button
+                      onClick={() => setDisplayCount((prev) => prev + 12)}
                       style={{
+                        padding: '12px 24px',
+                        fontSize: '14px',
+                        border: '1px solid #3c3836',
+                        fontWeight: 'bold',
                         backgroundColor: '#282828',
-                        borderColor: '#3c3836',
+                        color: '#b8f53e',
+                        cursor: 'pointer',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        borderRadius: '4px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#b8f53e';
+                        e.currentTarget.style.color = '#1d2021';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#282828';
+                        e.currentTarget.style.color = '#b8f53e';
                       }}
                     >
-                      {/* Model Name and Brand */}
-                      <h2 className="text-lg font-bold mb-1" style={{ color: '#b8f53e' }}>
-                        {vehicle.model_name}
-                      </h2>
-                      <p className="text-xs mb-4" style={{ color: '#928374' }}>
-                        {vehicle.brand} | {vehicle.category}
-                      </p>
+                      $ load_more --count=12
+                    </button>
+                  </div>
+                )}
 
-                      {/* Stats Section */}
-                      <div className="space-y-2 text-xs" style={{ color: '#ebdbb2' }}>
-                        {/* Displacement */}
-                        <div className="flex justify-between">
-                          <span style={{ color: '#928374' }}>displacement</span>
-                          <span>{vehicle.displacement_cc} cc</span>
-                        </div>
-
-                        {/* Horsepower with Bar */}
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <span style={{ color: '#928374' }}>horsepower</span>
-                            <span>{hp} hp</span>
-                          </div>
-                          <div style={{ color: '#b8f53e', letterSpacing: '0px' }}>
-                            {renderHpBar(hp)}
-                          </div>
-                        </div>
-
-                        {/* Torque */}
-                        <div className="flex justify-between">
-                          <span style={{ color: '#928374' }}>torque</span>
-                          <span>{vehicle.max_torque}</span>
-                        </div>
-
-                        {/* Weight */}
-                        <div className="flex justify-between">
-                          <span style={{ color: '#928374' }}>wet_weight</span>
-                          <span>{vehicle.wet_weight_kg} kg</span>
-                        </div>
-
-                        {/* Price */}
-                        <div className="flex justify-between pt-2 border-t-2" style={{ borderColor: '#3c3836' }}>
-                          <span style={{ color: '#928374' }}>msrp</span>
-                          <span style={{ color: '#fabd2f' }}>
-                            {formatPrice(vehicle.msrp)}
-                          </span>
-                        </div>
-
-                        {/* Additional Info */}
-                        <div className="flex justify-between text-xs pt-2" style={{ color: '#928374' }}>
-                          <span>seat_height: {vehicle.seat_height_mm}mm</span>
-                        </div>
-                        <div className="flex justify-between text-xs" style={{ color: '#928374' }}>
-                          <span>fuel_tank: {vehicle.fuel_tank_l}L</span>
-                        </div>
-                      </div>
-
-                      {/* Features */}
-                      {vehicle.features && vehicle.features.length > 0 && (
-                        <div className="mt-4 pt-4 border-t-2" style={{ borderColor: '#3c3836' }}>
-                          <div className="text-xs mb-2" style={{ color: '#83a598' }}>
-                            [FEATURES]
-                          </div>
-                          <div className="text-xs space-y-1">
-                            {vehicle.features.map((feature, idx) => (
-                              <div key={idx} style={{ color: '#928374' }}>
-                                - {feature}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="flex justify-center mb-8">
-                  <button
-                    onClick={() => setDisplayCount((prev) => prev + 12)}
-                    className="px-6 py-3 text-sm border-2 font-bold transition-colors"
-                    style={{
-                      backgroundColor: '#282828',
-                      borderColor: '#3c3836',
-                      color: '#b8f53e',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#b8f53e';
-                      e.currentTarget.style.color = '#1d2021';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#282828';
-                      e.currentTarget.style.color = '#b8f53e';
-                    }}
-                  >
-                    $ load_more --count=12
-                  </button>
+                {/* Result Count */}
+                <div style={{ textAlign: 'center', fontSize: '12px', color: '#928374' }}>
+                  showing {displayedVehicles.length} of {filteredVehicles.length} results
                 </div>
-              )}
-
-              {/* Result Count */}
-              <div className="text-center text-xs" style={{ color: '#928374' }}>
-                showing {displayedVehicles.length} of {filteredVehicles.length} results
-              </div>
-            </>
-          )}
-        </>
-      )}
+              </>
+            )}
+          </>
+        )}
+      </div>
     </main>
   );
 }

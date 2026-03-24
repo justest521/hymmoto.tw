@@ -59,43 +59,35 @@ export default function NewsPage() {
       backgroundColor: '#1d2021',
       color: '#ebdbb2',
       fontFamily: "'JetBrains Mono', monospace",
-      minHeight: '100vh'
+      minHeight: '100vh',
+      padding: '30px 24px'
     }}>
-      {/* Header */}
-      <section style={{
-        padding: '60px 20px',
-        textAlign: 'center',
-        borderBottom: '1px solid #3c3836'
-      }}>
-        <h1 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '48px',
-          fontWeight: 'bold',
-          margin: '0 0 10px 0',
-          color: '#ebdbb2',
-          letterSpacing: '4px'
-        }}>LATEST NEWS</h1>
-        <h2 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '24px',
-          margin: '0 0 8px 0',
-          color: '#b8f53e'
-        }}>最新動態</h2>
-        <p style={{
-          fontSize: '14px',
-          color: '#928374',
-          margin: '0',
-          letterSpacing: '1px'
-        }}>AI 驅動的機車產業新聞</p>
-      </section>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        {/* Header */}
+        <section style={{
+          borderBottom: '1px solid #3c3836',
+          paddingBottom: '20px',
+          marginBottom: '20px'
+        }}>
+          <div style={{ color: '#928374', fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: '#b8f53e' }}>news --latest</span>
+          </div>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#ebdbb2', margin: 0, letterSpacing: '2px' }}>
+            LATEST NEWS
+          </h1>
+          <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            AI 驅動的機車產業新聞
+          </div>
+        </section>
 
-      {/* Category Tabs */}
-      <section style={{
-        padding: '20px',
-        borderBottom: '1px solid #3c3836',
-        textAlign: 'center'
-      }}>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Category Tabs */}
+        <section style={{
+          borderBottom: '1px solid #3c3836',
+          paddingBottom: '20px',
+          marginBottom: '20px',
+          textAlign: 'center'
+        }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {categories.map((cat) => (
             <button
               key={cat.id}
@@ -116,17 +108,16 @@ export default function NewsPage() {
               {cat.label}
             </button>
           ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Featured Article */}
-      {featuredArticle && (
-        <section style={{
-          padding: '40px 20px',
-          backgroundColor: '#282828',
-          borderBottom: '2px solid #3c3836'
-        }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        {/* Featured Article */}
+        {featuredArticle && (
+          <section style={{
+            marginBottom: '20px',
+            borderBottom: '1px solid #3c3836',
+            paddingBottom: '20px'
+          }}>
             <Link href={`/news/${featuredArticle.slug}`}>
               <div style={{
                 display: 'grid',
@@ -140,7 +131,7 @@ export default function NewsPage() {
                 <div style={{
                   backgroundColor: '#1a1a1f',
                   border: '1px solid #3c3836',
-                  borderRadius: '8px',
+                  borderRadius: '4px',
                   height: '280px',
                   display: 'flex',
                   alignItems: 'center',
@@ -203,16 +194,13 @@ export default function NewsPage() {
                 </div>
               </div>
             </Link>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {/* Articles Grid */}
-      <section style={{
-        padding: '40px 20px',
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
+        {/* Articles Grid */}
+        <section style={{
+          marginBottom: '20px'
+        }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
@@ -224,7 +212,7 @@ export default function NewsPage() {
               <div style={{
                 backgroundColor: '#282828',
                 border: '1px solid #3c3836',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 overflow: 'hidden',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
@@ -304,77 +292,78 @@ export default function NewsPage() {
               </div>
             </Link>
           ))}
-        </div>
+          </div>
 
-        {/* Pagination */}
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: currentPage === 1 ? 'transparent' : '#282828',
-              border: `1px solid ${currentPage === 1 ? '#666666' : '#3c3836'}`,
-              color: currentPage === 1 ? '#666666' : '#ebdbb2',
-              borderRadius: '4px',
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              fontFamily: "'JetBrains Mono', monospace"
-            }}
-          >
-            « Previous
-          </button>
-
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {/* Pagination */}
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
             <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
               style={{
                 padding: '8px 12px',
-                backgroundColor: currentPage === page ? '#b8f53e' : 'transparent',
-                border: `1px solid ${currentPage === page ? '#b8f53e' : '#3c3836'}`,
-                color: currentPage === page ? '#1d2021' : '#ebdbb2',
+                backgroundColor: currentPage === 1 ? 'transparent' : '#282828',
+                border: `1px solid ${currentPage === 1 ? '#666666' : '#3c3836'}`,
+                color: currentPage === 1 ? '#666666' : '#ebdbb2',
                 borderRadius: '4px',
-                cursor: 'pointer',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
                 fontSize: '12px',
-                fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: currentPage === page ? 'bold' : 'normal'
+                fontFamily: "'JetBrains Mono', monospace"
               }}
             >
-              {page}
+              « Previous
             </button>
-          ))}
 
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            style={{
-              padding: '8px 12px',
-              backgroundColor: currentPage === totalPages ? 'transparent' : '#282828',
-              border: `1px solid ${currentPage === totalPages ? '#666666' : '#3c3836'}`,
-              color: currentPage === totalPages ? '#666666' : '#ebdbb2',
-              borderRadius: '4px',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              fontFamily: "'JetBrains Mono', monospace"
-            }}
-          >
-            Next »
-          </button>
-        </div>
-      </section>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                style={{
+                  padding: '8px 12px',
+                  backgroundColor: currentPage === page ? '#b8f53e' : 'transparent',
+                  border: `1px solid ${currentPage === page ? '#b8f53e' : '#3c3836'}`,
+                  color: currentPage === page ? '#1d2021' : '#ebdbb2',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: currentPage === page ? 'bold' : 'normal'
+                }}
+              >
+                {page}
+              </button>
+            ))}
 
-      {/* Footer */}
-      <section style={{
-        padding: '40px 20px',
-        textAlign: 'center',
-        color: '#928374',
-        fontSize: '12px',
-        borderTop: '2px solid #3c3836',
-        marginTop: '40px'
-      }}>
-        <p style={{ margin: '0', letterSpacing: '1px' }}>新聞更新時間 2026-03-24 | 所有文章均由 AI 模型生成</p>
-      </section>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '8px 12px',
+                backgroundColor: currentPage === totalPages ? 'transparent' : '#282828',
+                border: `1px solid ${currentPage === totalPages ? '#666666' : '#3c3836'}`,
+                color: currentPage === totalPages ? '#666666' : '#ebdbb2',
+                borderRadius: '4px',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                fontSize: '12px',
+                fontFamily: "'JetBrains Mono', monospace"
+              }}
+            >
+              Next »
+            </button>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <section style={{
+          borderTop: '1px solid #3c3836',
+          paddingTop: '20px',
+          marginTop: '20px',
+          textAlign: 'center',
+          color: '#928374',
+          fontSize: '12px'
+        }}>
+          <p style={{ margin: '0', letterSpacing: '1px' }}>新聞更新時間 2026-03-24 | 所有文章均由 AI 模型生成</p>
+        </section>
+      </div>
     </div>
   );
 }

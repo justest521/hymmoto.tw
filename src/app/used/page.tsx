@@ -92,231 +92,217 @@ export default function UsedPage() {
       style={{
         backgroundColor: gruvboxColors.bg,
         color: gruvboxColors.text,
-        fontFamily: 'JetBrains Mono, monospace',
+        fontFamily: "'JetBrains Mono', monospace",
         minHeight: '100vh',
-        padding: '2rem',
+        padding: '30px 24px',
       }}
     >
-      {/* Terminal Header */}
-      <div
-        style={{
-          borderBottom: `1px solid ${gruvboxColors.border}`,
-          paddingBottom: '1rem',
-          marginBottom: '2rem',
-        }}
-      >
-        <div style={{ fontSize: '0.875rem', color: gruvboxColors.muted }}>
-          guest@hymmoto.tw:~$ used --valuations
-        </div>
-      </div>
-
-      {/* Title */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 'bold',
-            color: gruvboxColors.green,
-            marginBottom: '0.5rem',
-          }}
-        >
-          USED VEHICLE CENTER
-        </h1>
-        <p style={{ fontSize: '0.875rem', color: gruvboxColors.muted }}>
-          / 中古車估價中心
-        </p>
-      </div>
-
-      {/* Loading State */}
-      {loading && (
-        <div
-          style={{
-            backgroundColor: gruvboxColors.card,
-            border: `1px solid ${gruvboxColors.border}`,
-            padding: '1.5rem',
-            marginBottom: '2rem',
-            color: gruvboxColors.muted,
-            fontSize: '0.875rem',
-          }}
-        >
-          Loading valuations from Supabase...
-        </div>
-      )}
-
-      {!loading && (
-        <>
-          {/* Search Section */}
-          <div style={{ marginBottom: '2rem' }}>
-            <input
-              type="text"
-              placeholder="輸入品牌或車型..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                backgroundColor: gruvboxColors.card,
-                color: gruvboxColors.text,
-                border: `1px solid ${gruvboxColors.border}`,
-                padding: '0.75rem',
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '0.875rem',
-                boxSizing: 'border-box',
-              }}
-            />
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        {/* Terminal Header */}
+        <div style={{ marginBottom: '40px', borderBottom: `1px solid ${gruvboxColors.border}`, paddingBottom: '20px' }}>
+          <div style={{ color: gruvboxColors.muted, fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: gruvboxColors.green }}>used --valuations</span>
           </div>
-
-          {/* Brand Cards Section */}
-          <div style={{ marginBottom: '3rem' }}>
-            <div
-              style={{
-                color: gruvboxColors.gold,
-                fontSize: '0.875rem',
-                marginBottom: '1rem',
-                fontWeight: 'bold',
-              }}
-            >
-              [ BRANDS ]
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                gap: '1rem',
-              }}
-            >
-              {filteredBrands.map((brand) => (
-                <div
-                  key={brand.name}
-                  style={{
-                    backgroundColor: gruvboxColors.card,
-                    border: `1px solid ${gruvboxColors.border}`,
-                    padding: '1rem',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor =
-                      gruvboxColors.green;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor =
-                      gruvboxColors.border;
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: '0.875rem',
-                      color: gruvboxColors.text,
-                      fontWeight: 'bold',
-                      marginBottom: '0.5rem',
-                    }}
-                  >
-                    {brand.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '0.75rem',
-                      color: gruvboxColors.muted,
-                    }}
-                  >
-                    {brand.count} model{brand.count !== 1 ? 's' : ''}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: gruvboxColors.text, margin: 0, letterSpacing: '2px' }}>
+            USED VEHICLE CENTER
+          </h1>
+          <div style={{ color: gruvboxColors.muted, fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            中古車估價中心
           </div>
+        </div>
 
-          {/* Recent Valuations Section */}
-          <div>
-            <div
-              style={{
-                color: gruvboxColors.gold,
-                fontSize: '0.875rem',
-                marginBottom: '1rem',
-                fontWeight: 'bold',
-              }}
-            >
-              [ RECENT VALUATIONS ]
+        {/* Loading State */}
+        {loading && (
+          <div
+            style={{
+              backgroundColor: gruvboxColors.card,
+              border: `1px solid ${gruvboxColors.border}`,
+              padding: '1.5rem',
+              marginBottom: '2rem',
+              color: gruvboxColors.muted,
+              fontSize: '0.875rem',
+            }}
+          >
+            Loading valuations from Supabase...
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            {/* Search Section */}
+            <div style={{ marginBottom: '2rem' }}>
+              <input
+                type="text"
+                placeholder="輸入品牌或車型..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  backgroundColor: gruvboxColors.card,
+                  color: gruvboxColors.text,
+                  border: `1px solid ${gruvboxColors.border}`,
+                  padding: '0.75rem',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '0.875rem',
+                  boxSizing: 'border-box',
+                }}
+              />
             </div>
 
-            {recentValuations.length === 0 ? (
+            {/* Brand Cards Section */}
+            <div style={{ marginBottom: '3rem' }}>
               <div
                 style={{
-                  backgroundColor: gruvboxColors.card,
-                  border: `1px solid ${gruvboxColors.border}`,
-                  padding: '1.5rem',
                   color: gruvboxColors.muted,
-                  fontSize: '0.875rem',
+                  fontSize: '12px',
+                  marginBottom: '1rem',
                 }}
               >
-                No valuations found.
+                $ <span style={{ color: gruvboxColors.green }}>brands --list</span>
               </div>
-            ) : (
               <div
                 style={{
-                  display: 'flex',
-                  flexDirection: 'column',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
                   gap: '1rem',
                 }}
               >
-                {recentValuations.map((valuation, idx) => (
+                {filteredBrands.map((brand) => (
                   <div
-                    key={idx}
+                    key={brand.name}
                     style={{
                       backgroundColor: gruvboxColors.card,
                       border: `1px solid ${gruvboxColors.border}`,
                       padding: '1rem',
-                      fontSize: '0.75rem',
-                      fontFamily: 'JetBrains Mono, monospace',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.2s',
+                      borderRadius: '4px',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.borderColor =
+                        gruvboxColors.green;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.borderColor =
+                        gruvboxColors.border;
                     }}
                   >
                     <div
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
+                        fontSize: '0.875rem',
+                        color: gruvboxColors.text,
+                        fontWeight: 'bold',
                         marginBottom: '0.5rem',
                       }}
                     >
-                      <div>
-                        <span style={{ color: gruvboxColors.green }}>
-                          {valuation.brand}
-                        </span>
-                        <span style={{ color: gruvboxColors.muted }}>
-                          {' '}
-                          /{' '}
-                        </span>
-                        <span style={{ color: gruvboxColors.text }}>
-                          {valuation.model_name}
-                        </span>
-                      </div>
-                      <div style={{ color: gruvboxColors.gold }}>
-                        {valuation.buy_year}
-                      </div>
+                      {brand.name}
                     </div>
                     <div
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
+                        fontSize: '0.75rem',
+                        color: gruvboxColors.muted,
                       }}
                     >
-                      <span style={{ color: gruvboxColors.muted }}>
-                        qty:
-                      </span>
-                      <span style={{ color: gruvboxColors.green }}>
-                        {bar(valuation.quantity)}
-                      </span>
-                      <span style={{ color: gruvboxColors.text }}>
-                        {valuation.quantity}
-                      </span>
+                      {brand.count} model{brand.count !== 1 ? 's' : ''}
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        </>
-      )}
+            </div>
+
+            {/* Recent Valuations Section */}
+            <div>
+              <div
+                style={{
+                  color: gruvboxColors.muted,
+                  fontSize: '12px',
+                  marginBottom: '1rem',
+                }}
+              >
+                $ <span style={{ color: gruvboxColors.green }}>used --recent</span>
+              </div>
+
+              {recentValuations.length === 0 ? (
+                <div
+                  style={{
+                    backgroundColor: gruvboxColors.card,
+                    border: `1px solid ${gruvboxColors.border}`,
+                    padding: '1.5rem',
+                    color: gruvboxColors.muted,
+                    fontSize: '0.875rem',
+                    borderRadius: '4px',
+                  }}
+                >
+                  No valuations found.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                  }}
+                >
+                  {recentValuations.map((valuation, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        backgroundColor: gruvboxColors.card,
+                        border: `1px solid ${gruvboxColors.border}`,
+                        padding: '1rem',
+                        fontSize: '0.75rem',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        borderRadius: '4px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          marginBottom: '0.5rem',
+                        }}
+                      >
+                        <div>
+                          <span style={{ color: gruvboxColors.green }}>
+                            {valuation.brand}
+                          </span>
+                          <span style={{ color: gruvboxColors.muted }}>
+                            {' '}
+                            /{' '}
+                          </span>
+                          <span style={{ color: gruvboxColors.text }}>
+                            {valuation.model_name}
+                          </span>
+                        </div>
+                        <div style={{ color: gruvboxColors.gold }}>
+                          {valuation.buy_year}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                        }}
+                      >
+                        <span style={{ color: gruvboxColors.muted }}>
+                          qty:
+                        </span>
+                        <span style={{ color: gruvboxColors.green }}>
+                          {bar(valuation.quantity)}
+                        </span>
+                        <span style={{ color: gruvboxColors.text }}>
+                          {valuation.quantity}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

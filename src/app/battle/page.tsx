@@ -141,36 +141,40 @@ const BattlePage = () => {
     }
 
     return (
-      <div className="border-b" style={{ borderColor: COLORS.border }}>
+      <div style={{ borderBottom: `1px solid ${COLORS.border}` }}>
         <div
-          className="px-4 py-2 text-sm"
-          style={{ color: COLORS.muted, backgroundColor: COLORS.card }}
+          style={{
+            color: COLORS.muted,
+            backgroundColor: COLORS.card,
+            padding: '8px 16px',
+            fontSize: '14px',
+          }}
         >
           {label}
         </div>
-        <div className="grid grid-cols-2 gap-4 px-4 py-3">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', padding: '12px 16px' }}>
           <div
             style={{
               backgroundColor: leftWins ? COLORS.green + '20' : rightWins ? COLORS.red + '20' : 'transparent',
               color: leftWins ? COLORS.green : rightWins ? COLORS.red : COLORS.text,
-              padding: '0.75rem',
+              padding: '12px',
               borderRadius: '4px',
             }}
           >
-            <div className="text-lg font-bold">{leftValue}</div>
-            {unit && <div className="text-xs" style={{ color: COLORS.muted }}>{unit}</div>}
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{leftValue}</div>
+            {unit && <div style={{ fontSize: '12px', color: COLORS.muted }}>{unit}</div>}
           </div>
           <div
             style={{
               backgroundColor: rightWins ? COLORS.green + '20' : leftWins ? COLORS.red + '20' : 'transparent',
               color: rightWins ? COLORS.green : leftWins ? COLORS.red : COLORS.text,
-              padding: '0.75rem',
+              padding: '12px',
               borderRadius: '4px',
               textAlign: 'right',
             }}
           >
-            <div className="text-lg font-bold">{rightValue}</div>
-            {unit && <div className="text-xs" style={{ color: COLORS.muted }}>{unit}</div>}
+            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{rightValue}</div>
+            {unit && <div style={{ fontSize: '12px', color: COLORS.muted }}>{unit}</div>}
           </div>
         </div>
       </div>
@@ -191,18 +195,23 @@ const BattlePage = () => {
     const rightWins = rightValue > leftValue
 
     return (
-      <div className="border-b" style={{ borderColor: COLORS.border }}>
+      <div style={{ borderBottom: `1px solid ${COLORS.border}` }}>
         <div
-          className="px-4 py-2 text-sm"
-          style={{ color: COLORS.muted, backgroundColor: COLORS.card }}
+          style={{
+            color: COLORS.muted,
+            backgroundColor: COLORS.card,
+            padding: '8px 16px',
+            fontSize: '14px',
+          }}
         >
           {label}
         </div>
-        <div className="px-4 py-3 space-y-2">
-          <div>
+        <div style={{ padding: '12px 16px' }}>
+          <div style={{ marginBottom: '8px' }}>
             <div
-              className="text-sm font-mono"
               style={{
+                fontSize: '14px',
+                fontFamily: "'JetBrains Mono', monospace",
                 color: leftWins ? COLORS.green : rightWins ? COLORS.red : COLORS.text,
               }}
             >
@@ -211,8 +220,10 @@ const BattlePage = () => {
           </div>
           <div>
             <div
-              className="text-sm font-mono text-right"
               style={{
+                fontSize: '14px',
+                fontFamily: "'JetBrains Mono', monospace",
+                textAlign: 'right',
                 color: rightWins ? COLORS.green : leftWins ? COLORS.red : COLORS.text,
               }}
             >
@@ -226,8 +237,13 @@ const BattlePage = () => {
 
   return (
     <div
-      style={{ backgroundColor: COLORS.bg, color: COLORS.text, minHeight: '100vh' }}
-      className="font-mono"
+      style={{
+        backgroundColor: COLORS.bg,
+        color: COLORS.text,
+        fontFamily: "'JetBrains Mono', monospace",
+        minHeight: '100vh',
+        padding: '30px 24px',
+      }}
     >
       <style>
         {`
@@ -241,6 +257,10 @@ const BattlePage = () => {
             background-color: ${COLORS.card};
             color: ${COLORS.text};
             border: 1px solid ${COLORS.border};
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            border-radius: 4px;
+            padding: 12px 16px;
           }
           input::placeholder {
             color: ${COLORS.muted};
@@ -252,50 +272,41 @@ const BattlePage = () => {
         `}
       </style>
 
-      <div className="p-6 md:p-8">
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         {/* Terminal Header */}
-        <div className="mb-8">
-          <div
-            className="text-sm font-mono px-4 py-2"
-            style={{
-              color: COLORS.green,
-              backgroundColor: COLORS.card,
-              borderLeft: `2px solid ${COLORS.green}`,
-            }}
-          >
-            guest@hymmoto.tw:~$ battle --versus
+        <div style={{ marginBottom: '40px', borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '20px' }}>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: COLORS.green }}>battle --versus</span>
           </div>
-        </div>
-
-        {/* Title */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">BATTLE MODE</h1>
-          <h1 className="text-3xl font-bold mb-4 chinese-text" style={{ color: COLORS.gold }}>
-            對戰模式
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: COLORS.text, margin: 0, letterSpacing: '2px' }}>
+            BATTLE MODE
           </h1>
-          <p className="text-sm chinese-text" style={{ color: COLORS.muted }}>
-            車款規格對決 · 選擇兩台車進行比較
-          </p>
+          <div style={{ color: COLORS.muted, fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            對戰模式 · 車款規格對決
+          </div>
         </div>
 
         {loading ? (
           <div
-            className="text-center py-12"
-            style={{ color: COLORS.muted }}
+            style={{
+              textAlign: 'center',
+              padding: '48px 0',
+              color: COLORS.muted,
+            }}
           >
-            <p className="mb-2">$ loading vehicle_specs...</p>
+            <p style={{ marginBottom: '8px' }}>$ loading vehicle_specs...</p>
             <p style={{ color: COLORS.green }}>▌</p>
           </div>
         ) : (
           <>
             {/* Search Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '48px' }}>
               {/* Left Side */}
               <div>
-                <div className="mb-2 text-xs" style={{ color: COLORS.muted }}>
+                <div style={{ marginBottom: '8px', fontSize: '12px', color: COLORS.muted }}>
                   LEFT CONTENDER
                 </div>
-                <div className="relative">
+                <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     placeholder="Search brand or model..."
@@ -305,21 +316,37 @@ const BattlePage = () => {
                       setShowLeftDropdown(true)
                     }}
                     onFocus={() => setShowLeftDropdown(true)}
-                    className="w-full px-4 py-2 rounded text-sm"
+                    style={{ width: '100%' }}
                   />
                   {showLeftDropdown && leftResults.length > 0 && (
                     <div
-                      className="absolute top-full left-0 right-0 mt-1 rounded z-10 max-h-64 overflow-y-auto"
-                      style={{ backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        borderRadius: '4px',
+                        zIndex: 10,
+                        maxHeight: '256px',
+                        overflowY: 'auto',
+                        backgroundColor: COLORS.card,
+                        border: `1px solid ${COLORS.border}`,
+                      }}
                     >
                       {leftResults.map((v) => (
                         <button
                           key={v.id}
                           onClick={() => handleLeftSelect(v)}
-                          className="w-full text-left px-4 py-2 hover:bg-opacity-50 text-sm"
                           style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '8px 16px',
                             backgroundColor: COLORS.card,
                             color: COLORS.text,
+                            border: 'none',
+                            fontSize: '14px',
+                            cursor: 'pointer',
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = COLORS.border
@@ -335,7 +362,7 @@ const BattlePage = () => {
                   )}
                 </div>
                 {leftSelected && (
-                  <div className="mt-2 text-sm" style={{ color: COLORS.green }}>
+                  <div style={{ marginTop: '8px', fontSize: '14px', color: COLORS.green }}>
                     ✓ {leftSelected.brand} {leftSelected.model_name}
                   </div>
                 )}
@@ -343,10 +370,10 @@ const BattlePage = () => {
 
               {/* Right Side */}
               <div>
-                <div className="mb-2 text-xs" style={{ color: COLORS.muted }}>
+                <div style={{ marginBottom: '8px', fontSize: '12px', color: COLORS.muted }}>
                   RIGHT CONTENDER
                 </div>
-                <div className="relative">
+                <div style={{ position: 'relative' }}>
                   <input
                     type="text"
                     placeholder="Search brand or model..."
@@ -356,21 +383,37 @@ const BattlePage = () => {
                       setShowRightDropdown(true)
                     }}
                     onFocus={() => setShowRightDropdown(true)}
-                    className="w-full px-4 py-2 rounded text-sm"
+                    style={{ width: '100%' }}
                   />
                   {showRightDropdown && rightResults.length > 0 && (
                     <div
-                      className="absolute top-full left-0 right-0 mt-1 rounded z-10 max-h-64 overflow-y-auto"
-                      style={{ backgroundColor: COLORS.card, border: `1px solid ${COLORS.border}` }}
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        marginTop: '4px',
+                        borderRadius: '4px',
+                        zIndex: 10,
+                        maxHeight: '256px',
+                        overflowY: 'auto',
+                        backgroundColor: COLORS.card,
+                        border: `1px solid ${COLORS.border}`,
+                      }}
                     >
                       {rightResults.map((v) => (
                         <button
                           key={v.id}
                           onClick={() => handleRightSelect(v)}
-                          className="w-full text-left px-4 py-2 hover:bg-opacity-50 text-sm"
                           style={{
+                            width: '100%',
+                            textAlign: 'left',
+                            padding: '8px 16px',
                             backgroundColor: COLORS.card,
                             color: COLORS.text,
+                            border: 'none',
+                            fontSize: '14px',
+                            cursor: 'pointer',
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = COLORS.border
@@ -386,7 +429,7 @@ const BattlePage = () => {
                   )}
                 </div>
                 {rightSelected && (
-                  <div className="mt-2 text-sm" style={{ color: COLORS.green }}>
+                  <div style={{ marginTop: '8px', fontSize: '14px', color: COLORS.green }}>
                     ✓ {rightSelected.brand} {rightSelected.model_name}
                   </div>
                 )}
@@ -395,270 +438,281 @@ const BattlePage = () => {
 
             {/* Comparison Section */}
             {leftSelected && rightSelected && (
-              <div>
-                <div className="relative mb-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left Card */}
+              <div style={{ position: 'relative', marginBottom: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  {/* Left Card */}
+                  <div
+                    style={{
+                      backgroundColor: COLORS.card,
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}
+                  >
                     <div
-                      className="rounded overflow-hidden"
-                      style={{ backgroundColor: COLORS.card, border: `2px solid ${COLORS.border}` }}
+                      style={{
+                        backgroundColor: COLORS.border,
+                        padding: '12px 16px',
+                      }}
                     >
-                      <div
-                        className="px-4 py-3"
-                        style={{ backgroundColor: COLORS.border }}
-                      >
-                        <div className="text-sm" style={{ color: COLORS.muted }}>
-                          [LEFT]
-                        </div>
-                        <div className="text-xl font-bold">
-                          {leftSelected.brand}
-                        </div>
-                        <div className="text-lg">{leftSelected.model_name}</div>
+                      <div style={{ fontSize: '12px', color: COLORS.muted }}>
+                        [LEFT]
                       </div>
-
-                      {/* Comparison Rows */}
-                      <ComparisonValue
-                        label="Displacement"
-                        leftValue={leftSelected.displacement_cc}
-                        rightValue={rightSelected.displacement_cc}
-                        unit="cc"
-                        isNumeric={true}
-                      />
-
-                      {(() => {
-                        const leftHp = parseHorsepower(leftSelected.max_horsepower)
-                        const rightHp = parseHorsepower(rightSelected.max_horsepower)
-                        return leftHp !== null && rightHp !== null ? (
-                          <BarComparison
-                            label="Horsepower"
-                            leftValue={leftHp}
-                            rightValue={rightHp}
-                          />
-                        ) : (
-                          <ComparisonValue
-                            label="Horsepower"
-                            leftValue={leftSelected.max_horsepower}
-                            rightValue={rightSelected.max_horsepower}
-                          />
-                        )
-                      })()}
-
-                      {(() => {
-                        const leftTorque = parseTorque(leftSelected.max_torque)
-                        const rightTorque = parseTorque(rightSelected.max_torque)
-                        return leftTorque !== null && rightTorque !== null ? (
-                          <BarComparison
-                            label="Torque"
-                            leftValue={leftTorque}
-                            rightValue={rightTorque}
-                          />
-                        ) : (
-                          <ComparisonValue
-                            label="Torque"
-                            leftValue={leftSelected.max_torque}
-                            rightValue={rightSelected.max_torque}
-                          />
-                        )
-                      })()}
-
-                      <BarComparison
-                        label="Weight"
-                        leftValue={leftSelected.wet_weight_kg}
-                        rightValue={rightSelected.wet_weight_kg}
-                      />
-
-                      <ComparisonValue
-                        label="Price (NTD)"
-                        leftValue={leftSelected.msrp.toLocaleString()}
-                        rightValue={rightSelected.msrp.toLocaleString()}
-                        isNumeric={true}
-                      />
-
-                      <BarComparison
-                        label="Seat Height"
-                        leftValue={leftSelected.seat_height_mm}
-                        rightValue={rightSelected.seat_height_mm}
-                      />
-
-                      <BarComparison
-                        label="Fuel Tank"
-                        leftValue={leftSelected.fuel_tank_l}
-                        rightValue={rightSelected.fuel_tank_l}
-                      />
-
-                      <ComparisonValue
-                        label="Front Brake"
-                        leftValue={leftSelected.front_brake}
-                        rightValue={rightSelected.front_brake}
-                      />
-
-                      <ComparisonValue
-                        label="Rear Brake"
-                        leftValue={leftSelected.rear_brake}
-                        rightValue={rightSelected.rear_brake}
-                      />
-
-                      <ComparisonValue
-                        label="ABS"
-                        leftValue={leftSelected.abs_type}
-                        rightValue={rightSelected.abs_type}
-                      />
-
-                      <ComparisonValue
-                        label="Cooling"
-                        leftValue={leftSelected.cooling_system}
-                        rightValue={rightSelected.cooling_system}
-                      />
-
-                      <div className="px-4 py-3" style={{ color: COLORS.muted, fontSize: '0.75rem' }}>
-                        Engine: {leftSelected.engine_type}
+                      <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                        {leftSelected.brand}
                       </div>
+                      <div style={{ fontSize: '16px' }}>{leftSelected.model_name}</div>
                     </div>
 
-                    {/* VS Badge */}
-                    <div className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-                      <div
-                        className="px-4 py-2 rounded font-bold text-lg"
-                        style={{
-                          backgroundColor: COLORS.card,
-                          border: `2px solid ${COLORS.gold}`,
-                          color: COLORS.gold,
-                        }}
-                      >
-                        VS
-                      </div>
-                    </div>
+                    {/* Comparison Rows */}
+                    <ComparisonValue
+                      label="Displacement"
+                      leftValue={leftSelected.displacement_cc}
+                      rightValue={rightSelected.displacement_cc}
+                      unit="cc"
+                      isNumeric={true}
+                    />
 
-                    {/* Right Card */}
-                    <div
-                      className="rounded overflow-hidden"
-                      style={{ backgroundColor: COLORS.card, border: `2px solid ${COLORS.border}` }}
-                    >
-                      <div
-                        className="px-4 py-3"
-                        style={{ backgroundColor: COLORS.border }}
-                      >
-                        <div className="text-sm" style={{ color: COLORS.muted }}>
-                          [RIGHT]
-                        </div>
-                        <div className="text-xl font-bold">
-                          {rightSelected.brand}
-                        </div>
-                        <div className="text-lg">{rightSelected.model_name}</div>
-                      </div>
+                    {(() => {
+                      const leftHp = parseHorsepower(leftSelected.max_horsepower)
+                      const rightHp = parseHorsepower(rightSelected.max_horsepower)
+                      return leftHp !== null && rightHp !== null ? (
+                        <BarComparison
+                          label="Horsepower"
+                          leftValue={leftHp}
+                          rightValue={rightHp}
+                        />
+                      ) : (
+                        <ComparisonValue
+                          label="Horsepower"
+                          leftValue={leftSelected.max_horsepower}
+                          rightValue={rightSelected.max_horsepower}
+                        />
+                      )
+                    })()}
 
-                      {/* Comparison Rows - Mirror */}
-                      <ComparisonValue
-                        label="Displacement"
-                        leftValue={leftSelected.displacement_cc}
-                        rightValue={rightSelected.displacement_cc}
-                        unit="cc"
-                        isNumeric={true}
-                      />
+                    {(() => {
+                      const leftTorque = parseTorque(leftSelected.max_torque)
+                      const rightTorque = parseTorque(rightSelected.max_torque)
+                      return leftTorque !== null && rightTorque !== null ? (
+                        <BarComparison
+                          label="Torque"
+                          leftValue={leftTorque}
+                          rightValue={rightTorque}
+                        />
+                      ) : (
+                        <ComparisonValue
+                          label="Torque"
+                          leftValue={leftSelected.max_torque}
+                          rightValue={rightSelected.max_torque}
+                        />
+                      )
+                    })()}
 
-                      {(() => {
-                        const leftHp = parseHorsepower(leftSelected.max_horsepower)
-                        const rightHp = parseHorsepower(rightSelected.max_horsepower)
-                        return leftHp !== null && rightHp !== null ? (
-                          <BarComparison
-                            label="Horsepower"
-                            leftValue={leftHp}
-                            rightValue={rightHp}
-                          />
-                        ) : (
-                          <ComparisonValue
-                            label="Horsepower"
-                            leftValue={leftSelected.max_horsepower}
-                            rightValue={rightSelected.max_horsepower}
-                          />
-                        )
-                      })()}
+                    <BarComparison
+                      label="Weight"
+                      leftValue={leftSelected.wet_weight_kg}
+                      rightValue={rightSelected.wet_weight_kg}
+                    />
 
-                      {(() => {
-                        const leftTorque = parseTorque(leftSelected.max_torque)
-                        const rightTorque = parseTorque(rightSelected.max_torque)
-                        return leftTorque !== null && rightTorque !== null ? (
-                          <BarComparison
-                            label="Torque"
-                            leftValue={leftTorque}
-                            rightValue={rightTorque}
-                          />
-                        ) : (
-                          <ComparisonValue
-                            label="Torque"
-                            leftValue={leftSelected.max_torque}
-                            rightValue={rightSelected.max_torque}
-                          />
-                        )
-                      })()}
+                    <ComparisonValue
+                      label="Price (NTD)"
+                      leftValue={leftSelected.msrp.toLocaleString()}
+                      rightValue={rightSelected.msrp.toLocaleString()}
+                      isNumeric={true}
+                    />
 
-                      <BarComparison
-                        label="Weight"
-                        leftValue={leftSelected.wet_weight_kg}
-                        rightValue={rightSelected.wet_weight_kg}
-                      />
+                    <BarComparison
+                      label="Seat Height"
+                      leftValue={leftSelected.seat_height_mm}
+                      rightValue={rightSelected.seat_height_mm}
+                    />
 
-                      <ComparisonValue
-                        label="Price (NTD)"
-                        leftValue={leftSelected.msrp.toLocaleString()}
-                        rightValue={rightSelected.msrp.toLocaleString()}
-                        isNumeric={true}
-                      />
+                    <BarComparison
+                      label="Fuel Tank"
+                      leftValue={leftSelected.fuel_tank_l}
+                      rightValue={rightSelected.fuel_tank_l}
+                    />
 
-                      <BarComparison
-                        label="Seat Height"
-                        leftValue={leftSelected.seat_height_mm}
-                        rightValue={rightSelected.seat_height_mm}
-                      />
+                    <ComparisonValue
+                      label="Front Brake"
+                      leftValue={leftSelected.front_brake}
+                      rightValue={rightSelected.front_brake}
+                    />
 
-                      <BarComparison
-                        label="Fuel Tank"
-                        leftValue={leftSelected.fuel_tank_l}
-                        rightValue={rightSelected.fuel_tank_l}
-                      />
+                    <ComparisonValue
+                      label="Rear Brake"
+                      leftValue={leftSelected.rear_brake}
+                      rightValue={rightSelected.rear_brake}
+                    />
 
-                      <ComparisonValue
-                        label="Front Brake"
-                        leftValue={leftSelected.front_brake}
-                        rightValue={rightSelected.front_brake}
-                      />
+                    <ComparisonValue
+                      label="ABS"
+                      leftValue={leftSelected.abs_type}
+                      rightValue={rightSelected.abs_type}
+                    />
 
-                      <ComparisonValue
-                        label="Rear Brake"
-                        leftValue={leftSelected.rear_brake}
-                        rightValue={rightSelected.rear_brake}
-                      />
+                    <ComparisonValue
+                      label="Cooling"
+                      leftValue={leftSelected.cooling_system}
+                      rightValue={rightSelected.cooling_system}
+                    />
 
-                      <ComparisonValue
-                        label="ABS"
-                        leftValue={leftSelected.abs_type}
-                        rightValue={rightSelected.abs_type}
-                      />
-
-                      <ComparisonValue
-                        label="Cooling"
-                        leftValue={leftSelected.cooling_system}
-                        rightValue={rightSelected.cooling_system}
-                      />
-
-                      <div className="px-4 py-3" style={{ color: COLORS.muted, fontSize: '0.75rem' }}>
-                        Engine: {rightSelected.engine_type}
-                      </div>
+                    <div style={{ padding: '12px 16px', color: COLORS.muted, fontSize: '12px' }}>
+                      Engine: {leftSelected.engine_type}
                     </div>
                   </div>
 
-                  {/* Mobile VS Badge */}
-                  <div className="md:hidden flex justify-center py-4">
+                  {/* Right Card */}
+                  <div
+                    style={{
+                      backgroundColor: COLORS.card,
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                    }}
+                  >
                     <div
-                      className="px-4 py-2 rounded font-bold text-lg"
                       style={{
-                        backgroundColor: COLORS.card,
-                        border: `2px solid ${COLORS.gold}`,
-                        color: COLORS.gold,
+                        backgroundColor: COLORS.border,
+                        padding: '12px 16px',
                       }}
                     >
-                      VS
+                      <div style={{ fontSize: '12px', color: COLORS.muted }}>
+                        [RIGHT]
+                      </div>
+                      <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                        {rightSelected.brand}
+                      </div>
+                      <div style={{ fontSize: '16px' }}>{rightSelected.model_name}</div>
                     </div>
+
+                    {/* Comparison Rows - Mirror */}
+                    <ComparisonValue
+                      label="Displacement"
+                      leftValue={leftSelected.displacement_cc}
+                      rightValue={rightSelected.displacement_cc}
+                      unit="cc"
+                      isNumeric={true}
+                    />
+
+                    {(() => {
+                      const leftHp = parseHorsepower(leftSelected.max_horsepower)
+                      const rightHp = parseHorsepower(rightSelected.max_horsepower)
+                      return leftHp !== null && rightHp !== null ? (
+                        <BarComparison
+                          label="Horsepower"
+                          leftValue={leftHp}
+                          rightValue={rightHp}
+                        />
+                      ) : (
+                        <ComparisonValue
+                          label="Horsepower"
+                          leftValue={leftSelected.max_horsepower}
+                          rightValue={rightSelected.max_horsepower}
+                        />
+                      )
+                    })()}
+
+                    {(() => {
+                      const leftTorque = parseTorque(leftSelected.max_torque)
+                      const rightTorque = parseTorque(rightSelected.max_torque)
+                      return leftTorque !== null && rightTorque !== null ? (
+                        <BarComparison
+                          label="Torque"
+                          leftValue={leftTorque}
+                          rightValue={rightTorque}
+                        />
+                      ) : (
+                        <ComparisonValue
+                          label="Torque"
+                          leftValue={leftSelected.max_torque}
+                          rightValue={rightSelected.max_torque}
+                        />
+                      )
+                    })()}
+
+                    <BarComparison
+                      label="Weight"
+                      leftValue={leftSelected.wet_weight_kg}
+                      rightValue={rightSelected.wet_weight_kg}
+                    />
+
+                    <ComparisonValue
+                      label="Price (NTD)"
+                      leftValue={leftSelected.msrp.toLocaleString()}
+                      rightValue={rightSelected.msrp.toLocaleString()}
+                      isNumeric={true}
+                    />
+
+                    <BarComparison
+                      label="Seat Height"
+                      leftValue={leftSelected.seat_height_mm}
+                      rightValue={rightSelected.seat_height_mm}
+                    />
+
+                    <BarComparison
+                      label="Fuel Tank"
+                      leftValue={leftSelected.fuel_tank_l}
+                      rightValue={rightSelected.fuel_tank_l}
+                    />
+
+                    <ComparisonValue
+                      label="Front Brake"
+                      leftValue={leftSelected.front_brake}
+                      rightValue={rightSelected.front_brake}
+                    />
+
+                    <ComparisonValue
+                      label="Rear Brake"
+                      leftValue={leftSelected.rear_brake}
+                      rightValue={rightSelected.rear_brake}
+                    />
+
+                    <ComparisonValue
+                      label="ABS"
+                      leftValue={leftSelected.abs_type}
+                      rightValue={rightSelected.abs_type}
+                    />
+
+                    <ComparisonValue
+                      label="Cooling"
+                      leftValue={leftSelected.cooling_system}
+                      rightValue={rightSelected.cooling_system}
+                    />
+
+                    <div style={{ padding: '12px 16px', color: COLORS.muted, fontSize: '12px' }}>
+                      Engine: {rightSelected.engine_type}
+                    </div>
+                  </div>
+                </div>
+
+                {/* VS Badge */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 20,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      fontSize: '18px',
+                      backgroundColor: COLORS.card,
+                      border: `2px solid ${COLORS.gold}`,
+                      color: COLORS.gold,
+                    }}
+                  >
+                    VS
                   </div>
                 </div>
               </div>
@@ -666,10 +720,13 @@ const BattlePage = () => {
 
             {!leftSelected || !rightSelected ? (
               <div
-                className="text-center py-12"
-                style={{ color: COLORS.muted }}
+                style={{
+                  textAlign: 'center',
+                  padding: '48px 0',
+                  color: COLORS.muted,
+                }}
               >
-                <p className="text-sm">$ select two motorcycles to begin battle...</p>
+                <p style={{ fontSize: '14px' }}>$ select two motorcycles to begin battle...</p>
               </div>
             ) : null}
           </>
