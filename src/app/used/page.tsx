@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase';
 
 interface CPOValuation {
-  brand: string;
-  model_name: string;
-  buy_year: number;
+  brand: string | null;
+  model_name: string | null;
+  buy_year: number | null;
   price: number | null;
-  quantity: number;
+  quantity: number | null;
 }
 
 const gruvboxColors = {
@@ -21,8 +21,9 @@ const gruvboxColors = {
   gold: '#fabd2f',
 };
 
-function bar(value: number, max: number = 10): string {
-  const filled = Math.round((value / max) * 10);
+function bar(value: number | null, max: number = 10): string {
+  if (value === null || value === undefined || isNaN(value)) return '░'.repeat(10);
+  const filled = Math.min(10, Math.max(0, Math.round((value / max) * 10)));
   const empty = 10 - filled;
   return '█'.repeat(filled) + '░'.repeat(empty);
 }
@@ -50,7 +51,8 @@ export default function UsedPage() {
         // Extract unique brands with model count
         const brandMap = new Map<string, number>();
         typedData.forEach((item) => {
-          brandMap.set(item.brand, (brandMap.get(item.brand) || 0) + 1);
+          const b = item.brand || 'Unknown';
+          brandMap.set(b, (brandMap.get(b) || 0) + 1);
         });
 
         const brandList = Array.from(brandMap.entries())
@@ -264,18 +266,18 @@ export default function UsedPage() {
                       >
                         <div>
                           <span style={{ color: gruvboxColors.green }}>
-                            {valuation.brand}
+                            {valuation.brand || 'N/A'}
                           </span>
                           <span style={{ color: gruvboxColors.muted }}>
                             {' '}
                             /{' '}
                           </span>
                           <span style={{ color: gruvboxColors.text }}>
-                            {valuation.model_name}
+                            {valuation.model_name || 'N/A'}
                           </span>
                         </div>
                         <div style={{ color: gruvboxColors.gold }}>
-                          {valuation.buy_year}
+                          {valuation.buy_year || '—'}
                         </div>
                       </div>
                       <div
@@ -292,7 +294,7 @@ export default function UsedPage() {
                           {bar(valuation.quantity)}
                         </span>
                         <span style={{ color: gruvboxColors.text }}>
-                          {valuation.quantity}
+                          {valuation.quantity ?? 0}
                         </span>
                       </div>
                     </div>
