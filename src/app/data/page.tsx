@@ -303,7 +303,16 @@ const DataPage: React.FC = () => {
 
   const maxTrend = Math.max(...monthlyTrend.map(t => t.sales), 1);
 
-  // ═══ Sidebar computed data ═══
+  // ═══ Sidebar computed data (reactive to filters) ═══
+
+  // Filtered brand monthly data based on selected brand
+  const filteredBrandData = useMemo(() => {
+    if (selectedBrand === 'all') return brandMonthlyData;
+    return brandMonthlyData.filter(d => d.brand === selectedBrand);
+  }, [brandMonthlyData, selectedBrand]);
+
+  // Sidebar label
+  const sidebarLabel = selectedBrand !== 'all' ? selectedBrand : '全市場';
 
   // MoM: compare endMonth with previous month
   const momData = useMemo(() => {
@@ -311,33 +320,33 @@ const DataPage: React.FC = () => {
     const curIdx = months.indexOf(endMonth);
     if (curIdx < 0 || curIdx >= months.length - 1) return null;
     const prevMonth = months[curIdx + 1];
-    const curTotal = brandMonthlyData.filter(d => d.year_month === endMonth).reduce((s, d) => s + d.total, 0);
-    const prevTotal = brandMonthlyData.filter(d => d.year_month === prevMonth).reduce((s, d) => s + d.total, 0);
+    const curTotal = filteredBrandData.filter(d => d.year_month === endMonth).reduce((s, d) => s + d.total, 0);
+    const prevTotal = filteredBrandData.filter(d => d.year_month === prevMonth).reduce((s, d) => s + d.total, 0);
     if (prevTotal === 0) return null;
     const change = ((curTotal - prevTotal) / prevTotal * 100);
     return { curTotal, prevTotal, prevMonth, change };
-  }, [endMonth, months, brandMonthlyData]);
+  }, [endMonth, months, filteredBrandData]);
 
   // YoY: compare endMonth with same month last year
   const yoyData = useMemo(() => {
     if (!endMonth) return null;
     const [y, m] = endMonth.split('-');
     const lastYear = `${parseInt(y) - 1}-${m}`;
-    const curTotal = brandMonthlyData.filter(d => d.year_month === endMonth).reduce((s, d) => s + d.total, 0);
-    const prevTotal = brandMonthlyData.filter(d => d.year_month === lastYear).reduce((s, d) => s + d.total, 0);
+    const curTotal = filteredBrandData.filter(d => d.year_month === endMonth).reduce((s, d) => s + d.total, 0);
+    const prevTotal = filteredBrandData.filter(d => d.year_month === lastYear).reduce((s, d) => s + d.total, 0);
     if (prevTotal === 0) return null;
     const change = ((curTotal - prevTotal) / prevTotal * 100);
     return { curTotal, prevTotal, prevYear: lastYear, change };
-  }, [endMonth, brandMonthlyData]);
+  }, [endMonth, filteredBrandData]);
 
-  // Recent 6 months sparkline data
+  // Recent 12 months sparkline data
   const recentSparkData = useMemo(() => {
     const recent = months.slice(0, Math.min(12, months.length)).reverse();
     return recent.map(m => ({
       month: m,
-      total: brandMonthlyData.filter(d => d.year_month === m).reduce((s, d) => s + d.total, 0),
+      total: filteredBrandData.filter(d => d.year_month === m).reduce((s, d) => s + d.total, 0),
     }));
-  }, [months, brandMonthlyData]);
+  }, [months, filteredBrandData]);
 
   // Brand movers: biggest share changes MoM
   const brandMovers = useMemo(() => {
@@ -362,10 +371,12 @@ const DataPage: React.FC = () => {
     return changes;
   }, [endMonth, months, brandMonthlyData]);
 
-  // Brand sparklines for top 3
+  // Brand sparklines: show selected brand or top 3
   const brandSparklines = useMemo(() => {
-    const topBrands = ['SYM', 'KYMCO', 'YAMAHA'];
     const recent = months.slice(0, Math.min(12, months.length)).reverse();
+    const topBrands = selectedBrand !== 'all'
+      ? [selectedBrand]
+      : ['SYM', 'KYMCO', 'YAMAHA'];
     return topBrands.map(brand => {
       const values = recent.map(m => {
         const row = brandMonthlyData.find(d => d.year_month === m && d.brand === brand);
@@ -373,25 +384,25 @@ const DataPage: React.FC = () => {
       });
       return { brand, values, spark: sparkline(values) };
     });
-  }, [months, brandMonthlyData]);
+  }, [months, brandMonthlyData, selectedBrand]);
 
   // Cycling status messages
   const statusMessages = useMemo(() => {
     if (!brandMonthlyData.length || !endMonth) return [];
     const msgs: string[] = [];
-    if (momData) msgs.push(`MoM: ${momData.change >= 0 ? '+' : ''}${momData.change.toFixed(1)}%`);
-    if (yoyData) msgs.push(`YoY: ${yoyData.change >= 0 ? '+' : ''}${yoyData.change.toFixed(1)}%`);
-    if (brandMovers.length > 0) {
+    if (momData) msgs.push(`${sidebarLabel} MoM: ${momData.change >= 0 ? '+' : ''}${momData.change.toFixed(1)}%`);
+    if (yoyData) msgs.push(`${sidebarLabel} YoY: ${yoyData.change >= 0 ? '+' : ''}${yoyData.change.toFixed(1)}%`);
+    if (brandMovers.length > 0 && selectedBrand === 'all') {
       const top = brandMovers[0];
       msgs.push(`${top.brand} 漲幅最大 +${top.change.toFixed(0)}%`);
     }
-    if (brandMovers.length > 1) {
+    if (brandMovers.length > 1 && selectedBrand === 'all') {
       const bot = brandMovers[brandMovers.length - 1];
       if (bot.change < 0) msgs.push(`${bot.brand} 跌幅最大 ${bot.change.toFixed(0)}%`);
     }
-    msgs.push(`共 ${months.length} 個月數據`);
+    msgs.push(`共 ${months.length} 個月 · ${sidebarLabel}`);
     return msgs;
-  }, [brandMonthlyData, endMonth, momData, yoyData, brandMovers, months.length]);
+  }, [brandMonthlyData, endMonth, momData, yoyData, brandMovers, months.length, sidebarLabel, selectedBrand]);
 
   const currentStatus = statusMessages.length > 0 ? statusMessages[logIndex % statusMessages.length] : '';
 
@@ -688,7 +699,7 @@ const DataPage: React.FC = () => {
             {momData && (
               <div style={sideCardStyle}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
-                  MoM CHANGE
+                  MoM CHANGE{selectedBrand !== 'all' ? ` · ${selectedBrand}` : ''}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
                   <span style={{
@@ -710,7 +721,7 @@ const DataPage: React.FC = () => {
             {yoyData && (
               <div style={sideCardStyle}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
-                  YoY CHANGE
+                  YoY CHANGE{selectedBrand !== 'all' ? ` · ${selectedBrand}` : ''}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
                   <span style={{
@@ -732,7 +743,7 @@ const DataPage: React.FC = () => {
             {recentSparkData.length > 0 && (
               <div style={sideCardStyle}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
-                  MARKET PULSE
+                  MARKET PULSE{selectedBrand !== 'all' ? ` · ${selectedBrand}` : ''}
                 </div>
                 <div style={{ fontSize: '16px', letterSpacing: '2px', color: '#b8f53e', marginBottom: '8px' }}>
                   {sparkline(recentSparkData.map(d => d.total))}
@@ -768,8 +779,8 @@ const DataPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Top Movers */}
-            {brandMovers.length > 0 && (
+            {/* Top Movers (only when no specific brand selected) */}
+            {brandMovers.length > 0 && selectedBrand === 'all' && (
               <div style={sideCardStyle}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
                   TOP MOVERS (MoM)
