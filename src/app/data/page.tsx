@@ -110,12 +110,60 @@ const CRT_STYLES = `
   0%, 100% { border-color: #3c3836; }
   50% { border-color: #504945; }
 }
+@keyframes moto-ride {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(calc(100vw + 100%)); }
+}
+@keyframes bar-race {
+  from { width: 0; }
+}
+@keyframes exhaust {
+  0% { opacity: 0.6; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateX(-20px) scale(2); }
+}
 `;
 
 // Inject styles once
 const StyleInjector = () => (
   <style dangerouslySetInnerHTML={{ __html: CRT_STYLES }} />
 );
+
+// ASCII Motorcycle animation
+const AsciiMoto = ({ duration = 6 }: { duration?: number }) => (
+  <div style={{ overflow: 'hidden', height: '20px', position: 'relative', marginBottom: '8px' }}>
+    <div style={{
+      animation: `moto-ride ${duration}s linear infinite`,
+      position: 'absolute', whiteSpace: 'nowrap',
+      fontSize: '12px', color: '#b8f53e',
+      textShadow: '0 0 4px rgba(184,245,62,0.4)',
+    }}>
+      <span style={{ color: '#928374', animation: 'exhaust 0.5s ease-out infinite', display: 'inline-block' }}>~</span>
+      <span style={{ color: '#928374', animation: 'exhaust 0.5s ease-out 0.15s infinite', display: 'inline-block' }}>~</span>
+      {' '}{'__o  ,_/'}{'<'}{'_'}
+    </div>
+  </div>
+);
+
+// Animated bar component for brand share
+const RaceBar = ({ value, max, width = 20, delay = 0, color = '#b8f53e' }: {
+  value: number; max: number; width?: number; delay?: number; color?: string;
+}) => {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <span style={{ display: 'inline-block', position: 'relative', width: `${width}ch`, fontFamily: "'JetBrains Mono', monospace" }}>
+      <span style={{ color: '#3c3836' }}>{'░'.repeat(width)}</span>
+      <span style={{
+        position: 'absolute', left: 0, top: 0, overflow: 'hidden',
+        animation: `bar-race 0.8s ease-out ${delay}s both`,
+        width: `${pct}%`,
+      }}>
+        <span style={{ color, textShadow: `0 0 4px ${color}40` }}>
+          {'█'.repeat(width)}
+        </span>
+      </span>
+    </span>
+  );
+};
 
 // Live dot indicator
 const LiveDot = () => (
@@ -318,6 +366,20 @@ const DataPage: React.FC = () => {
   }, [filtered]);
 
   const maxShare = brandSummary[0]?.share || 1;
+
+  // Rank change: compare current brand ranking with previous month
+  const prevMonthRanks = useMemo(() => {
+    if (!endMonth || months.length < 2) return new Map<string, number>();
+    const curIdx = months.indexOf(endMonth);
+    if (curIdx < 0 || curIdx >= months.length - 1) return new Map<string, number>();
+    const prevMonth = months[curIdx + 1];
+    const prev = brandMonthlyData
+      .filter(d => d.year_month === prevMonth)
+      .sort((a, b) => b.total - a.total);
+    const map = new Map<string, number>();
+    prev.forEach((d, i) => map.set(d.brand, i));
+    return map;
+  }, [endMonth, months, brandMonthlyData]);
 
   const ccSummary = useMemo(() => {
     return CC_SEGMENTS.filter(s => s.id !== 'all').map(seg => {
@@ -594,17 +656,42 @@ const DataPage: React.FC = () => {
             <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
               $ <span style={{ color: '#b8f53e' }}>brand --market-share{selectedBrand !== 'all' ? ` --brand=${selectedBrand}` : ''}{selectedCC !== 'all' ? ` --cc=${selectedCC}` : ''}</span>
             </div>
-            <div style={{ backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', padding: '20px' }}>
-              <div style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '14px', marginBottom: '16px', letterSpacing: '1px' }}>
-                BRAND MARKET SHARE · {rangeLabel}
+            <div style={{ backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', padding: '20px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '14px', letterSpacing: '1px' }}>
+                  BRAND MARKET SHARE · {rangeLabel}
+                </div>
               </div>
-              <div style={{ fontSize: '13px', whiteSpace: 'pre', lineHeight: '1.8', fontFamily: "'JetBrains Mono', monospace" }}>
+              <AsciiMoto duration={8} />
+              <div style={{ fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
                 {brandSummary.length === 0 && <div style={{ color: '#928374' }}>  No data found.</div>}
-                {brandSummary.slice(0, 15).map((b, i) => (
-                  <div key={i}>{`  ${b.name.padEnd(18)} ${bar(b.share, maxShare, 20)} ${`${b.share}%`.padStart(6)}  (${b.sales.toLocaleString().padStart(6)})`}</div>
-                ))}
+                {brandSummary.slice(0, 15).map((b, i) => {
+                  const prevRank = prevMonthRanks.get(b.name);
+                  const rankDiff = prevRank !== undefined ? prevRank - i : 0;
+                  const rankIndicator = rankDiff > 0
+                    ? <span style={{ color: '#b8bb26', fontSize: '10px', marginLeft: '4px', textShadow: '0 0 4px rgba(184,187,38,0.5)' }}>{'▲'}{rankDiff}</span>
+                    : rankDiff < 0
+                    ? <span style={{ color: '#fb4934', fontSize: '10px', marginLeft: '4px', textShadow: '0 0 4px rgba(251,73,52,0.5)' }}>{'▼'}{Math.abs(rankDiff)}</span>
+                    : <span style={{ color: '#928374', fontSize: '10px', marginLeft: '4px' }}>{'─'}</span>;
+                  return (
+                    <div key={b.name} style={{
+                      display: 'flex', alignItems: 'center', lineHeight: '2.2',
+                      animation: `fade-in-up 0.3s ease-out ${i * 0.05}s both`,
+                    }}>
+                      <span style={{ width: '28px', textAlign: 'right', color: i < 3 ? '#fabd2f' : '#928374', fontSize: '11px' }}>
+                        {i < 3 ? ['🥇', '🥈', '🥉'][i] : `${i + 1}`}
+                      </span>
+                      <span style={{ width: '8px' }} />
+                      <span style={{ width: '110px', color: i < 3 ? '#b8f53e' : '#ebdbb2', fontWeight: i < 3 ? 700 : 400 }}>{b.name}</span>
+                      <RaceBar value={b.share} max={maxShare} width={18} delay={i * 0.06} color={i < 3 ? '#b8f53e' : '#928374'} />
+                      <span style={{ width: '60px', textAlign: 'right', color: '#ebdbb2' }}>{b.share}%</span>
+                      <span style={{ width: '70px', textAlign: 'right', color: '#928374', fontSize: '12px' }}>({b.sales.toLocaleString()})</span>
+                      {rankIndicator}
+                    </div>
+                  );
+                })}
                 {brandSummary.length > 15 && (
-                  <div style={{ color: '#928374' }}>{`  ... +${brandSummary.length - 15} more brands`}</div>
+                  <div style={{ color: '#928374', marginTop: '4px' }}>{`  ... +${brandSummary.length - 15} more brands`}</div>
                 )}
               </div>
             </div>
