@@ -817,61 +817,119 @@ const DataPage: React.FC = () => {
                 </div>
               </div>
               <AsciiMoto duration={8} />
-              <div style={{ fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
-                {brandSummary.length === 0 && <div style={{ color: '#928374' }}>  No data found.</div>}
-                {brandSummary.slice(0, 15).map((b, i) => {
-                  const prevRank = prevMonthRanks.get(b.name);
-                  const rankDiff = prevRank !== undefined ? prevRank - i : 0;
-                  const extra = brandRowExtras.get(b.name);
-                  const momVal = extra?.mom;
-                  return (
-                    <React.Fragment key={b.name}>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', lineHeight: '2.2',
-                      animation: `fade-in-up 0.3s ease-out ${i * 0.05}s both`,
-                    }}>
-                      <span style={{ width: '28px', textAlign: 'right', color: i < 3 ? '#fabd2f' : '#928374', fontSize: '11px' }}>
-                        {i < 3 ? ['🥇', '🥈', '🥉'][i] : `${i + 1}`}
-                      </span>
-                      <span style={{ width: '8px' }} />
-                      <span style={{ width: '110px', color: i < 3 ? '#b8f53e' : '#ebdbb2', fontWeight: i < 3 ? 700 : 400 }}>{b.name}</span>
-                      <RaceBar value={b.share} max={maxShare} width={14} delay={i * 0.06} color={i < 3 ? '#b8f53e' : '#928374'} />
-                      <span style={{ width: '50px', textAlign: 'right', color: '#ebdbb2' }}>{b.share}%</span>
-                      <span style={{ width: '65px', textAlign: 'right', color: '#928374', fontSize: '11px' }}>({b.sales.toLocaleString()})</span>
-                      {/* Rank change */}
-                      <span style={{ width: '28px', textAlign: 'center', fontSize: '10px' }}>
-                        {rankDiff > 0
-                          ? <span style={{ color: '#b8bb26', textShadow: '0 0 4px rgba(184,187,38,0.5)' }}>▲{rankDiff}</span>
-                          : rankDiff < 0
-                          ? <span style={{ color: '#fb4934', textShadow: '0 0 4px rgba(251,73,52,0.5)' }}>▼{Math.abs(rankDiff)}</span>
-                          : <span style={{ color: '#504945' }}>─</span>
-                        }
-                      </span>
-                      {/* Mini sparkline (6 months) */}
-                      {extra && (
-                        <span style={{
-                          fontSize: '11px', letterSpacing: '0.5px', marginLeft: '6px',
-                          color: i < 3 ? '#b8f53e' : '#665c54',
-                          textShadow: i < 3 ? '0 0 3px rgba(184,245,62,0.3)' : 'none',
-                        }}>
-                          {extra.spark}
+              <div style={{ display: 'flex', gap: '20px' }}>
+                {/* Left: Brand list */}
+                <div style={{ flex: 1, minWidth: 0, fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
+                  {brandSummary.length === 0 && <div style={{ color: '#928374' }}>  No data found.</div>}
+                  {brandSummary.slice(0, 15).map((b, i) => {
+                    const prevRank = prevMonthRanks.get(b.name);
+                    const rankDiff = prevRank !== undefined ? prevRank - i : 0;
+                    const extra = brandRowExtras.get(b.name);
+                    const momVal = extra?.mom;
+                    return (
+                      <div key={b.name} style={{
+                        display: 'flex', alignItems: 'center', lineHeight: '2.2',
+                        animation: `fade-in-up 0.3s ease-out ${i * 0.05}s both`,
+                      }}>
+                        <span style={{ width: '28px', textAlign: 'right', color: i < 3 ? '#fabd2f' : '#928374', fontSize: '11px' }}>
+                          {i < 3 ? ['🥇', '🥈', '🥉'][i] : `${i + 1}`}
                         </span>
-                      )}
-                      {/* MoM % */}
-                      {momVal !== null && momVal !== undefined && (
-                        <span style={{
-                          width: '48px', textAlign: 'right', fontSize: '10px', marginLeft: '4px',
-                          color: momVal >= 0 ? '#b8bb26' : '#fb4934', fontWeight: 700,
-                        }}>
-                          {momVal >= 0 ? '+' : ''}{momVal.toFixed(0)}%
+                        <span style={{ width: '8px' }} />
+                        <span style={{ width: '110px', color: i < 3 ? '#b8f53e' : '#ebdbb2', fontWeight: i < 3 ? 700 : 400 }}>{b.name}</span>
+                        <RaceBar value={b.share} max={maxShare} width={14} delay={i * 0.06} color={i < 3 ? '#b8f53e' : '#928374'} />
+                        <span style={{ width: '50px', textAlign: 'right', color: '#ebdbb2' }}>{b.share}%</span>
+                        <span style={{ width: '65px', textAlign: 'right', color: '#928374', fontSize: '11px' }}>({b.sales.toLocaleString()})</span>
+                        {/* Rank change */}
+                        <span style={{ width: '28px', textAlign: 'center', fontSize: '10px' }}>
+                          {rankDiff > 0
+                            ? <span style={{ color: '#b8bb26', textShadow: '0 0 4px rgba(184,187,38,0.5)' }}>▲{rankDiff}</span>
+                            : rankDiff < 0
+                            ? <span style={{ color: '#fb4934', textShadow: '0 0 4px rgba(251,73,52,0.5)' }}>▼{Math.abs(rankDiff)}</span>
+                            : <span style={{ color: '#504945' }}>─</span>
+                          }
                         </span>
-                      )}
+                        {/* Mini sparkline (6 months) */}
+                        {extra && (
+                          <span style={{
+                            fontSize: '11px', letterSpacing: '0.5px', marginLeft: '6px',
+                            color: i < 3 ? '#b8f53e' : '#665c54',
+                            textShadow: i < 3 ? '0 0 3px rgba(184,245,62,0.3)' : 'none',
+                          }}>
+                            {extra.spark}
+                          </span>
+                        )}
+                        {/* MoM % */}
+                        {momVal !== null && momVal !== undefined && (
+                          <span style={{
+                            width: '48px', textAlign: 'right', fontSize: '10px', marginLeft: '4px',
+                            color: momVal >= 0 ? '#b8bb26' : '#fb4934', fontWeight: 700,
+                          }}>
+                            {momVal >= 0 ? '+' : ''}{momVal.toFixed(0)}%
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {brandSummary.length > 15 && (
+                    <div style={{ color: '#928374', marginTop: '4px' }}>{`  ... +${brandSummary.length - 15} more brands`}</div>
+                  )}
+                </div>
+
+                {/* Right: Top 3 Ad Slots */}
+                {brandSummary.length > 0 && (
+                  <div style={{ width: '160px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ color: '#504945', fontSize: '8px', letterSpacing: '2px', textAlign: 'right', marginBottom: '2px' }}>
+                      SPONSORED
                     </div>
-                    </React.Fragment>
-                  );
-                })}
-                {brandSummary.length > 15 && (
-                  <div style={{ color: '#928374', marginTop: '4px' }}>{`  ... +${brandSummary.length - 15} more brands`}</div>
+                    {brandSummary.slice(0, 3).map((b, i) => {
+                      const medalColors = ['#fabd2f', '#a89984', '#d65d0e'];
+                      const color = medalColors[i];
+                      return (
+                        <div key={`ad-${b.name}`} style={{
+                          border: `1px solid ${color}25`, borderRadius: '3px',
+                          backgroundColor: '#1d202180', padding: '10px',
+                          position: 'relative', overflow: 'hidden', cursor: 'pointer',
+                          animation: `ad-border-pulse 4s ease-in-out infinite ${i * 1.2}s`,
+                          flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                        }}>
+                          {/* Shimmer */}
+                          <div style={{
+                            position: 'absolute', inset: 0, zIndex: 0,
+                            background: 'linear-gradient(90deg, transparent 0%, rgba(184,245,62,0.03) 50%, transparent 100%)',
+                            backgroundSize: '200% 100%', animation: `ad-shimmer 6s ease-in-out infinite ${i * 0.8}s`,
+                            pointerEvents: 'none',
+                          }} />
+                          {/* Scanlines */}
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
+                            pointerEvents: 'none', zIndex: 1,
+                          }} />
+                          {/* AD tag */}
+                          <div style={{
+                            position: 'absolute', top: '4px', right: '5px', fontSize: '7px',
+                            color: '#504945', letterSpacing: '1px',
+                            animation: 'ad-tag-blink 3s ease-in-out infinite', zIndex: 2,
+                          }}>AD</div>
+                          {/* Content */}
+                          <div style={{ position: 'relative', zIndex: 2, textAlign: 'center' }}>
+                            <div style={{ fontSize: '24px', marginBottom: '4px', filter: 'saturate(0.7) brightness(0.9)' }}>
+                              {i === 0 ? '🏍' : i === 1 ? '🛵' : '⚡'}
+                            </div>
+                            <div style={{ fontSize: '10px', color, fontWeight: 700, letterSpacing: '0.5px', marginBottom: '2px' }}>
+                              {['🥇', '🥈', '🥉'][i]} {b.name}
+                            </div>
+                            <div style={{ fontSize: '8px', color: '#504945', fontStyle: 'italic' }}>
+                              廣告版位招租
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ fontSize: '8px', color: '#3c3836', textAlign: 'center', marginTop: '2px' }}>
+                      ad@hymmoto.tw
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -1184,76 +1242,6 @@ const DataPage: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── Sponsored Ad Slots (Top 3 Brands) ── */}
-            {brandSummary.length > 0 && (
-              <div style={sideCardStyle}>
-                <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span>SPONSORED</span>
-                  <span style={{
-                    fontSize: '8px', color: '#504945', border: '1px solid #3c3836',
-                    padding: '1px 5px', borderRadius: '2px',
-                    animation: 'ad-tag-blink 3s ease-in-out infinite',
-                  }}>AD</span>
-                </div>
-                {brandSummary.slice(0, 3).map((b, i) => {
-                  const medalColors = ['#fabd2f', '#a89984', '#d65d0e'];
-                  const color = medalColors[i];
-                  return (
-                    <div key={b.name} style={{
-                      padding: '8px 10px', marginBottom: i < 2 ? '8px' : 0,
-                      border: `1px solid ${color}25`,
-                      borderRadius: '3px', backgroundColor: '#1d202180',
-                      position: 'relative', overflow: 'hidden', cursor: 'pointer',
-                      animation: `ad-border-pulse 4s ease-in-out infinite ${i * 1.2}s`,
-                    }}>
-                      {/* Shimmer */}
-                      <div style={{
-                        position: 'absolute', inset: 0, zIndex: 0,
-                        background: 'linear-gradient(90deg, transparent 0%, rgba(184,245,62,0.02) 50%, transparent 100%)',
-                        backgroundSize: '200% 100%', animation: `ad-shimmer 6s ease-in-out infinite ${i * 0.8}s`,
-                        pointerEvents: 'none',
-                      }} />
-                      {/* Scanlines */}
-                      <div style={{
-                        position: 'absolute', inset: 0,
-                        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
-                        pointerEvents: 'none', zIndex: 1,
-                      }} />
-                      <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        {/* Brand image placeholder */}
-                        <div style={{
-                          width: '48px', height: '48px', borderRadius: '3px',
-                          border: `1px solid ${color}30`, backgroundColor: '#28282890',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '20px', flexShrink: 0,
-                        }}>
-                          <span style={{ filter: 'saturate(0.7) brightness(0.9)' }}>
-                            {i === 0 ? '🏍' : i === 1 ? '🛵' : '⚡'}
-                          </span>
-                        </div>
-                        {/* Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
-                            <span style={{ fontSize: '9px' }}>{['🥇', '🥈', '🥉'][i]}</span>
-                            <span style={{ fontSize: '11px', color, fontWeight: 700, letterSpacing: '0.5px' }}>{b.name}</span>
-                          </div>
-                          <div style={{ fontSize: '9px', color: '#928374', marginBottom: '3px' }}>
-                            mkt: {b.share}% · {b.sales.toLocaleString()} 台
-                          </div>
-                          <div style={{ fontSize: '9px', color: '#504945', fontStyle: 'italic' }}>
-                            廣告版位招租中
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div style={{ fontSize: '9px', color: '#504945', marginTop: '8px', textAlign: 'center', letterSpacing: '0.5px' }}>
-                  ad@hymmoto.tw
                 </div>
               </div>
             )}
