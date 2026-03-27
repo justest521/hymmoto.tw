@@ -47,11 +47,13 @@ const CC_SEGMENTS = [
 ];
 
 function fmtMonth(m: string): string {
+  if (!m || !m.includes('-')) return '';
   const [y, mm] = m.split('-');
   return `${y}年${parseInt(mm)}月`;
 }
 
 function fmtShortMonth(m: string): string {
+  if (!m || !m.includes('-')) return '';
   const [, mm] = m.split('-');
   return `${parseInt(mm)}月`;
 }
@@ -145,20 +147,21 @@ const DataPage: React.FC = () => {
   useEffect(() => {
     if (months.length === 0) return;
     const lines = [
-      `[SYS] connecting to hymmoto.tw database...`,
-      `[SYS] connection established ✓`,
+      '[SYS] connecting to hymmoto.tw database...',
+      '[SYS] connection established ✓',
       `[DATA] loading ${months.length} months of data...`,
-      `[DATA] vehicle_monthly_sales: online`,
-      `[DATA] sales_brand_monthly: online`,
-      `[SCAN] scanning market trends...`,
-      `[OK] data pipeline ready`,
+      '[DATA] vehicle_monthly_sales: online',
+      '[DATA] sales_brand_monthly: online',
+      '[SCAN] scanning market trends...',
+      '[OK] data pipeline ready',
     ];
     setLogLines([]);
-    let i = 0;
+    let idx = 0;
     const iv = setInterval(() => {
-      if (i < lines.length) {
-        setLogLines(prev => [...prev, lines[i]]);
-        i++;
+      if (idx < lines.length) {
+        const line = lines[idx];
+        setLogLines(prev => [...prev, line]);
+        idx++;
       } else {
         clearInterval(iv);
       }
@@ -238,7 +241,7 @@ const DataPage: React.FC = () => {
     }
     if (searchModel.trim()) {
       const q = searchModel.trim().toLowerCase();
-      d = d.filter(r => (r.display_name || '').toLowerCase().includes(q) || r.model_code.toLowerCase().includes(q));
+      d = d.filter(r => (r.display_name || '').toLowerCase().includes(q) || (r.model_code || '').toLowerCase().includes(q));
     }
     return d;
   }, [aggregatedData, selectedBrand, selectedCC, searchModel]);
@@ -669,8 +672,8 @@ const DataPage: React.FC = () => {
                 SYSTEM LOG
               </div>
               <div style={{ fontSize: '10px', lineHeight: '1.8', maxHeight: '120px', overflow: 'hidden' }}>
-                {logLines.map((line, i) => (
-                  <div key={i} style={{ color: line.includes('✓') || line.includes('OK') ? '#b8f53e' : line.includes('SYS') ? '#928374' : '#83a598' }}>
+                {logLines.filter(Boolean).map((line, i) => (
+                  <div key={i} style={{ color: (line || '').includes('✓') || (line || '').includes('OK') ? '#b8f53e' : (line || '').includes('SYS') ? '#928374' : '#83a598' }}>
                     {line}
                   </div>
                 ))}
