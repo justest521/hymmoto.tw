@@ -381,6 +381,30 @@ const DataPage: React.FC = () => {
     return map;
   }, [endMonth, months, brandMonthlyData]);
 
+  // Per-brand mini sparkline + MoM for brand share rows
+  const brandRowExtras = useMemo(() => {
+    const recent = months.slice(0, Math.min(6, months.length)).reverse();
+    const curIdx = endMonth ? months.indexOf(endMonth) : -1;
+    const prevMonth = curIdx >= 0 && curIdx < months.length - 1 ? months[curIdx + 1] : null;
+    const map = new Map<string, { spark: string; mom: number | null }>();
+    const allBrands = new Set(brandMonthlyData.map(d => d.brand));
+    allBrands.forEach(brand => {
+      const values = recent.map(m => {
+        const row = brandMonthlyData.find(d => d.year_month === m && d.brand === brand);
+        return row?.total || 0;
+      });
+      const spark = sparkline(values);
+      let mom: number | null = null;
+      if (prevMonth) {
+        const cur = brandMonthlyData.find(d => d.year_month === endMonth && d.brand === brand)?.total || 0;
+        const prev = brandMonthlyData.find(d => d.year_month === prevMonth && d.brand === brand)?.total || 0;
+        if (prev > 0) mom = ((cur - prev) / prev) * 100;
+      }
+      map.set(brand, { spark, mom });
+    });
+    return map;
+  }, [months, endMonth, brandMonthlyData]);
+
   const ccSummary = useMemo(() => {
     return CC_SEGMENTS.filter(s => s.id !== 'all').map(seg => {
       const rows = filtered.filter(r => seg.match!(r.displacement));
@@ -668,11 +692,8 @@ const DataPage: React.FC = () => {
                 {brandSummary.slice(0, 15).map((b, i) => {
                   const prevRank = prevMonthRanks.get(b.name);
                   const rankDiff = prevRank !== undefined ? prevRank - i : 0;
-                  const rankIndicator = rankDiff > 0
-                    ? <span style={{ color: '#b8bb26', fontSize: '10px', marginLeft: '4px', textShadow: '0 0 4px rgba(184,187,38,0.5)' }}>{'▲'}{rankDiff}</span>
-                    : rankDiff < 0
-                    ? <span style={{ color: '#fb4934', fontSize: '10px', marginLeft: '4px', textShadow: '0 0 4px rgba(251,73,52,0.5)' }}>{'▼'}{Math.abs(rankDiff)}</span>
-                    : <span style={{ color: '#928374', fontSize: '10px', marginLeft: '4px' }}>{'─'}</span>;
+                  const extra = brandRowExtras.get(b.name);
+                  const momVal = extra?.mom;
                   return (
                     <div key={b.name} style={{
                       display: 'flex', alignItems: 'center', lineHeight: '2.2',
@@ -683,10 +704,37 @@ const DataPage: React.FC = () => {
                       </span>
                       <span style={{ width: '8px' }} />
                       <span style={{ width: '110px', color: i < 3 ? '#b8f53e' : '#ebdbb2', fontWeight: i < 3 ? 700 : 400 }}>{b.name}</span>
-                      <RaceBar value={b.share} max={maxShare} width={18} delay={i * 0.06} color={i < 3 ? '#b8f53e' : '#928374'} />
-                      <span style={{ width: '60px', textAlign: 'right', color: '#ebdbb2' }}>{b.share}%</span>
-                      <span style={{ width: '70px', textAlign: 'right', color: '#928374', fontSize: '12px' }}>({b.sales.toLocaleString()})</span>
-                      {rankIndicator}
+                      <RaceBar value={b.share} max={maxShare} width={14} delay={i * 0.06} color={i < 3 ? '#b8f53e' : '#928374'} />
+                      <span style={{ width: '50px', textAlign: 'right', color: '#ebdbb2' }}>{b.share}%</span>
+                      <span style={{ width: '65px', textAlign: 'right', color: '#928374', fontSize: '11px' }}>({b.sales.toLocaleString()})</span>
+                      {/* Rank change */}
+                      <span style={{ width: '28px', textAlign: 'center', fontSize: '10px' }}>
+                        {rankDiff > 0
+                          ? <span style={{ color: '#b8bb26', textShadow: '0 0 4px rgba(184,187,38,0.5)' }}>▲{rankDiff}</span>
+                          : rankDiff < 0
+                          ? <span style={{ color: '#fb4934', textShadow: '0 0 4px rgba(251,73,52,0.5)' }}>▼{Math.abs(rankDiff)}</span>
+                          : <span style={{ color: '#504945' }}>─</span>
+                        }
+                      </span>
+                      {/* Mini sparkline (6 months) */}
+                      {extra && (
+                        <span style={{
+                          fontSize: '11px', letterSpacing: '0.5px', marginLeft: '6px',
+                          color: i < 3 ? '#b8f53e' : '#665c54',
+                          textShadow: i < 3 ? '0 0 3px rgba(184,245,62,0.3)' : 'none',
+                        }}>
+                          {extra.spark}
+                        </span>
+                      )}
+                      {/* MoM % */}
+                      {momVal !== null && momVal !== undefined && (
+                        <span style={{
+                          width: '48px', textAlign: 'right', fontSize: '10px', marginLeft: '4px',
+                          color: momVal >= 0 ? '#b8bb26' : '#fb4934', fontWeight: 700,
+                        }}>
+                          {momVal >= 0 ? '+' : ''}{momVal.toFixed(0)}%
+                        </span>
+                      )}
                     </div>
                   );
                 })}
