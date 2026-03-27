@@ -663,8 +663,7 @@ const DataPage: React.FC = () => {
         </div>
 
         {/* ═══ RIGHT SIDEBAR ═══ */}
-        <div style={{ width: '300px', flexShrink: 0 }}>
-          <div style={{ position: 'sticky', top: '30px' }}>
+        <div style={{ width: '300px', flexShrink: 0, alignSelf: 'flex-start', position: 'sticky', top: '30px' }}>
 
             {/* System Log */}
             <div style={{ ...sideCardStyle, fontFamily: "'JetBrains Mono', monospace" }}>
@@ -796,7 +795,6 @@ const DataPage: React.FC = () => {
               </div>
             )}
 
-          </div>
         </div>
 
       </div>
