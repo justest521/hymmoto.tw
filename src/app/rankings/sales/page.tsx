@@ -1,337 +1,380 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
 
-interface Ranking {
-  rank: number;
-  model: string;
+// ── Theme ───────────────────────────────────────────
+const C = {
+  bg: '#1d2021', card: '#282828', border: '#3c3836',
+  text: '#ebdbb2', muted: '#928374', green: '#b8f53e',
+  gold: '#fabd2f', red: '#fb4934', blue: '#83a598',
+  dim: '#504945',
+};
+
+const FONT = "'JetBrains Mono', monospace";
+const FONT_CN = "'Noto Sans TC', sans-serif";
+
+// ── CC Segments ─────────────────────────────────────
+const CC_FILTERS = [
+  { id: 'all', label: '全部', min: -1, max: 99999 },
+  { id: 'ev', label: '電動', min: -1, max: 0 },
+  { id: '125', label: '≤125cc', min: 1, max: 125 },
+  { id: '180', label: '126-180cc', min: 126, max: 180 },
+  { id: '300', label: '181-300cc', min: 181, max: 300 },
+  { id: '550', label: '301-550cc', min: 301, max: 550 },
+  { id: '551+', label: '551cc+', min: 551, max: 99999 },
+];
+
+interface ModelSales {
   brand: string;
-  cc: string;
-  sales: number;
-  marketShare: string;
-  change: number;
+  model_code: string;
+  display_name: string | null;
+  total_sales: number;
+  displacement_cc: number | null;
 }
 
+// ── Custom Tooltip ──────────────────────────────────
+function ChartTooltip({ active, payload }: any) {
+  if (!active || !payload?.[0]) return null;
+  const d = payload[0].payload;
+  return (
+    <div style={{
+      background: C.card, border: `1px solid ${C.border}`,
+      padding: '8px 12px', fontSize: '12px', fontFamily: FONT,
+    }}>
+      <div style={{ color: C.text }}>{d.name}</div>
+      <div style={{ color: C.green }}>{d.sales?.toLocaleString()} 台</div>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════
 export default function SalesRankingsPage() {
-  const [activeTab, setActiveTab] = useState('all');
+  const [months, setMonths] = useState<string[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [ccFilter, setCcFilter] = useState('all');
+  const [allModels, setAllModels] = useState<ModelSales[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const ccClasses = [
-    { id: 'all', label: '全部' },
-    { id: '50cc', label: '50cc' },
-    { id: '125cc', label: '125cc' },
-    { id: '150cc', label: '150cc' },
-    { id: '250cc', label: '250cc' },
-    { id: '300cc+', label: '300cc+' }
-  ];
+  // Fetch available months on mount
+  useEffect(() => {
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('year_month')
+        .order('year_month', { ascending: false });
+      const unique = [...new Set((data || []).map(d => d.year_month))];
+      setMonths(unique);
+      if (unique.length > 0) setSelectedMonth(unique[0]);
+    })();
+  }, []);
 
-  const fullRankingData: Ranking[] = [
-    { rank: 1, model: 'KYMCO 新K1', brand: 'KYMCO', cc: '125cc', sales: 3245, marketShare: '8.2%', change: 12 },
-    { rank: 2, model: 'YAMAHA FORCE', brand: 'YAMAHA', cc: '150cc', sales: 2890, marketShare: '7.3%', change: 5 },
-    { rank: 3, model: 'HONDA CB150R', brand: 'HONDA', cc: '150cc', sales: 2567, marketShare: '6.5%', change: -3 },
-    { rank: 4, model: 'SYM VF3i', brand: 'SYM', cc: '125cc', sales: 2345, marketShare: '5.9%', change: 8 },
-    { rank: 5, model: 'YAMAHA CYGNUS-X', brand: 'YAMAHA', cc: '125cc', sales: 2123, marketShare: '5.4%', change: 2 },
-    { rank: 6, model: 'HONDA PCX160', brand: 'HONDA', cc: '160cc', sales: 1987, marketShare: '5.0%', change: -1 },
-    { rank: 7, model: 'SUZUKI GSX-R150', brand: 'SUZUKI', cc: '150cc', sales: 1756, marketShare: '4.4%', change: 3 },
-    { rank: 8, model: 'KYMCO DOWNTOWN170i', brand: 'KYMCO', cc: '170cc', sales: 1645, marketShare: '4.2%', change: 6 },
-    { rank: 9, model: 'SYM GTS300i', brand: 'SYM', cc: '300cc', sales: 1534, marketShare: '3.9%', change: 4 },
-    { rank: 10, model: 'AEON ELITE', brand: 'AEON', cc: '125cc', sales: 1423, marketShare: '3.6%', change: -2 },
-    { rank: 11, model: 'HONDA Dio110', brand: 'HONDA', cc: '110cc', sales: 1312, marketShare: '3.3%', change: 1 },
-    { rank: 12, model: 'SUZUKI LETS4', brand: 'SUZUKI', cc: '110cc', sales: 1201, marketShare: '3.0%', change: 0 },
-    { rank: 13, model: 'YAMAHA BWSX', brand: 'YAMAHA', cc: '125cc', sales: 1098, marketShare: '2.8%', change: -4 },
-    { rank: 14, model: 'KYMCO K-Pipe125', brand: 'KYMCO', cc: '125cc', sales: 987, marketShare: '2.5%', change: 2 },
-    { rank: 15, model: 'SYM JETPOWER', brand: 'SYM', cc: '110cc', sales: 876, marketShare: '2.2%', change: -1 },
-    { rank: 16, model: 'HONDA LEAD110', brand: 'HONDA', cc: '110cc', sales: 765, marketShare: '1.9%', change: 3 },
-    { rank: 17, model: 'KAWASAKI NINJA', brand: 'KAWASAKI', cc: '250cc', sales: 654, marketShare: '1.7%', change: 5 },
-    { rank: 18, model: 'YAMAHA MT-07', brand: 'YAMAHA', cc: '700cc', sales: 543, marketShare: '1.4%', change: 7 },
-    { rank: 19, model: 'APRILIA RSV4', brand: 'APRILIA', cc: '1000cc', sales: 432, marketShare: '1.1%', change: 2 },
-    { rank: 20, model: 'DUCATI PANIGALE', brand: 'DUCATI', cc: '1200cc', sales: 321, marketShare: '0.8%', change: 4 }
-  ];
+  // Fetch models when month changes
+  useEffect(() => {
+    if (!selectedMonth) return;
+    setLoading(true);
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('vehicle_monthly_sales')
+        .select('brand, model_code, display_name, total_sales, displacement_cc')
+        .eq('year_month', selectedMonth)
+        .gt('total_sales', 0)
+        .order('total_sales', { ascending: false })
+        .limit(200);
+      setAllModels((data || []) as ModelSales[]);
+      setLoading(false);
+    })();
+  }, [selectedMonth]);
 
-  const podiumData = fullRankingData.slice(0, 3);
-  const totalSales = fullRankingData.reduce((sum, item) => sum + item.sales, 0);
+  // Filtered + ranked models
+  const filtered = useMemo(() => {
+    const seg = CC_FILTERS.find(f => f.id === ccFilter) || CC_FILTERS[0];
+    if (seg.id === 'all') return allModels;
+    return allModels.filter(m => {
+      const cc = m.displacement_cc || 0;
+      if (seg.id === 'ev') return cc === 0;
+      return cc >= seg.min && cc <= seg.max;
+    });
+  }, [allModels, ccFilter]);
 
-  const getRankColor = (rank: number) => {
-    if (rank === 1) return { border: '#fabd2f', bg: '#fabd2f20', medal: '🥇' };
-    if (rank === 2) return { border: '#a8a8b0', bg: '#a8a8b020', medal: '🥈' };
-    if (rank === 3) return { border: '#cd7f32', bg: '#cd7f3220', medal: '🥉' };
-    return { border: '#3c3836', bg: 'transparent', medal: '' };
+  const totalFiltered = filtered.reduce((s, m) => s + m.total_sales, 0);
+  const totalAll = allModels.reduce((s, m) => s + m.total_sales, 0);
+  const top3 = filtered.slice(0, 3);
+  const top20 = filtered.slice(0, 20);
+
+  // Chart data (top 10)
+  const chartData = filtered.slice(0, 10).map(m => ({
+    name: m.display_name || m.model_code,
+    sales: m.total_sales,
+    brand: m.brand,
+  }));
+
+  const [y, mo] = selectedMonth.split('-');
+  const monthLabel = selectedMonth ? `${y}年${parseInt(mo)}月` : '';
+
+  const getRankStyle = (rank: number) => {
+    if (rank === 1) return { border: C.gold, color: C.gold, label: '1st' };
+    if (rank === 2) return { border: '#a8a8b0', color: '#a8a8b0', label: '2nd' };
+    if (rank === 3) return { border: '#cd7f32', color: '#cd7f32', label: '3rd' };
+    return { border: C.border, color: C.muted, label: '' };
   };
 
   return (
-    <div style={{
-      backgroundColor: '#1d2021',
-      color: '#ebdbb2',
-      fontFamily: "'JetBrains Mono', monospace",
-      minHeight: '100vh',
-      padding: '0'
-    }}>
-      {/* Header */}
-      <section style={{
-        backgroundColor: '#282828',
-        padding: '60px 20px',
-        textAlign: 'center',
-        borderBottom: '2px solid #3c3836'
-      }}>
-        <h1 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '48px',
-          fontWeight: 'bold',
-          margin: '0 0 10px 0',
-          color: '#ebdbb2',
-          letterSpacing: '4px'
-        }}>SALES KING</h1>
-        <h2 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '24px',
-          margin: '0 0 8px 0',
-          color: '#b8f53e'
-        }}>銷售排行榜</h2>
-        <p style={{
-          fontSize: '14px',
-          color: '#928374',
-          margin: '0',
-          letterSpacing: '1px'
-        }}>2026-03 月份數據</p>
-      </section>
+    <div style={{ backgroundColor: C.bg, color: C.text, fontFamily: FONT, minHeight: '100vh' }}>
 
-      {/* Filter Bar */}
-      <section style={{
-        padding: '20px',
-        backgroundColor: '#282828',
-        borderBottom: '2px solid #3c3836',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        width: '100%'
-      }}>
-        <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 12px 0', textAlign: 'center' }}>CC分級</p>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          {ccClasses.map((cc) => (
-            <button
-              key={cc.id}
-              onClick={() => setActiveTab(cc.id)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: activeTab === cc.id ? '#b8f53e' : 'transparent',
-                color: activeTab === cc.id ? '#1d2021' : '#ebdbb2',
-                border: `1px solid ${activeTab === cc.id ? '#b8f53e' : '#3c3836'}`,
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontFamily: "'JetBrains Mono', monospace",
-                fontWeight: activeTab === cc.id ? 'bold' : 'normal',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {cc.label}
+      {/* ── Header ── */}
+      <div style={{ borderBottom: `1px solid ${C.border}`, padding: '30px 24px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ color: C.muted, fontSize: 12, marginBottom: 8 }}>
+            guest@hymmoto.tw:~$ <span style={{ color: C.green }}>rankings --sales</span>
+          </div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: 2 }}>
+            SALES KING <span style={{ color: C.green, fontSize: 16, fontFamily: FONT_CN }}>銷售排行榜</span>
+          </h1>
+          <div style={{ color: C.muted, fontSize: 12, marginTop: 4, fontFamily: FONT_CN }}>
+            {monthLabel} · 即時銷量排名
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px' }}>
+
+        {/* ── Month Selector ── */}
+        <div style={{
+          display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16,
+          padding: '12px 16px', backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4,
+        }}>
+          <span style={{ color: C.muted, fontSize: 11, lineHeight: '28px', marginRight: 8 }}>MONTH:</span>
+          {months.map(m => (
+            <button key={m} onClick={() => setSelectedMonth(m)} style={{
+              padding: '4px 12px', fontSize: 11, fontFamily: FONT, cursor: 'pointer', borderRadius: 2,
+              backgroundColor: m === selectedMonth ? C.green : 'transparent',
+              color: m === selectedMonth ? C.bg : C.text,
+              border: `1px solid ${m === selectedMonth ? C.green : C.border}`,
+            }}>
+              {m}
             </button>
           ))}
         </div>
-      </section>
 
-      {/* Podium Section */}
-      <section style={{
-        padding: '40px 20px',
-        backgroundColor: '#282828',
-        borderBottom: '2px solid #3c3836',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        width: '100%',
-        textAlign: 'center'
-      }}>
-        <h2 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '28px',
-          margin: '0 0 30px 0',
-          color: '#ebdbb2',
-          letterSpacing: '2px'
-        }}>TOP 3 領獎台</h2>
-
-        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', alignItems: 'flex-end' }}>
-          {/* 2nd Place */}
-          <div style={{ flex: 1, maxWidth: '280px' }}>
-            <div style={{
-              backgroundColor: '#1d2021',
-              border: `3px solid ${getRankColor(2).border}`,
-              padding: '24px',
-              borderRadius: '8px',
-              marginBottom: '16px',
-              textAlign: 'center'
+        {/* ── CC Filter ── */}
+        <div style={{
+          display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24,
+          padding: '12px 16px', backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4,
+        }}>
+          <span style={{ color: C.muted, fontSize: 11, lineHeight: '28px', marginRight: 8 }}>CC:</span>
+          {CC_FILTERS.map(f => (
+            <button key={f.id} onClick={() => setCcFilter(f.id)} style={{
+              padding: '4px 12px', fontSize: 11, fontFamily: FONT, cursor: 'pointer', borderRadius: 2,
+              backgroundColor: f.id === ccFilter ? C.gold : 'transparent',
+              color: f.id === ccFilter ? C.bg : C.text,
+              border: `1px solid ${f.id === ccFilter ? C.gold : C.border}`,
+              fontWeight: f.id === ccFilter ? 700 : 400,
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>{getRankColor(2).medal}</div>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#ebdbb2' }}>{podiumData[1].model}</h3>
-              <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 12px 0' }}>{podiumData[1].brand}</p>
-              <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', color: '#b8f53e' }}>{podiumData[1].sales.toLocaleString()}</p>
-            </div>
-            <div style={{ backgroundColor: '#a8a8b020', padding: '12px', borderRadius: '4px', fontSize: '32px', fontWeight: 'bold', color: '#a8a8b0' }}>2</div>
-          </div>
-
-          {/* 1st Place */}
-          <div style={{ flex: 1, maxWidth: '280px' }}>
-            <div style={{
-              backgroundColor: '#1d2021',
-              border: `3px solid ${getRankColor(1).border}`,
-              padding: '28px',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              textAlign: 'center',
-              boxShadow: `0 0 20px ${getRankColor(1).border}40`
-            }}>
-              <div style={{ fontSize: '56px', marginBottom: '12px' }}>{getRankColor(1).medal}</div>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#ebdbb2' }}>{podiumData[0].model}</h3>
-              <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 12px 0' }}>{podiumData[0].brand}</p>
-              <p style={{ fontSize: '28px', fontWeight: 'bold', margin: '0', color: '#b8f53e' }}>{podiumData[0].sales.toLocaleString()}</p>
-            </div>
-            <div style={{ backgroundColor: '#fabd2f20', padding: '16px', borderRadius: '4px', fontSize: '40px', fontWeight: 'bold', color: '#fabd2f' }}>1</div>
-          </div>
-
-          {/* 3rd Place */}
-          <div style={{ flex: 1, maxWidth: '280px' }}>
-            <div style={{
-              backgroundColor: '#1d2021',
-              border: `3px solid ${getRankColor(3).border}`,
-              padding: '24px',
-              borderRadius: '8px',
-              marginBottom: '16px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '48px', marginBottom: '12px' }}>{getRankColor(3).medal}</div>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#ebdbb2' }}>{podiumData[2].model}</h3>
-              <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 12px 0' }}>{podiumData[2].brand}</p>
-              <p style={{ fontSize: '24px', fontWeight: 'bold', margin: '0', color: '#b8f53e' }}>{podiumData[2].sales.toLocaleString()}</p>
-            </div>
-            <div style={{ backgroundColor: '#cd7f3220', padding: '12px', borderRadius: '4px', fontSize: '32px', fontWeight: 'bold', color: '#cd7f32' }}>3</div>
-          </div>
+              {f.label}
+            </button>
+          ))}
         </div>
-      </section>
 
-      {/* Full Ranking Table */}
-      <section style={{
-        padding: '40px 20px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        width: '100%'
-      }}>
-        <h2 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '24px',
-          margin: '0 0 24px 0',
-          color: '#ebdbb2',
-          textAlign: 'center',
-          letterSpacing: '2px'
-        }}>完整排行榜</h2>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 60, color: C.green, fontSize: 14 }}>
+            Loading sales data...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 60, color: C.muted, fontSize: 13 }}>
+            此級距在 {selectedMonth} 無銷售資料
+          </div>
+        ) : (
+          <>
+            {/* ── Stats Row ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+              {[
+                { label: 'TOTAL', value: totalFiltered.toLocaleString(), unit: '台', color: C.green },
+                { label: 'MODELS', value: filtered.length.toString(), unit: '款', color: C.gold },
+                { label: 'TOP 1', value: top3[0] ? (top3[0].display_name || top3[0].model_code) : '-', unit: `${top3[0]?.total_sales.toLocaleString() || 0} 台`, color: C.text },
+                { label: 'SHARE', value: totalAll > 0 ? `${(totalFiltered / totalAll * 100).toFixed(1)}%` : '-', unit: '佔全市場', color: C.blue },
+              ].map((s, i) => (
+                <div key={i} style={{
+                  backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4, padding: '16px 14px',
+                }}>
+                  <div style={{ color: C.muted, fontSize: 10, marginBottom: 6 }}>{s.label}</div>
+                  <div style={{ color: s.color, fontSize: 20, fontWeight: 700 }}>{s.value}</div>
+                  <div style={{ color: C.dim, fontSize: 10, marginTop: 2 }}>{s.unit}</div>
+                </div>
+              ))}
+            </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '13px'
-          }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #3c3836', backgroundColor: '#282828' }}>
-                <th style={{ padding: '12px', textAlign: 'center', color: '#928374', fontWeight: 'bold', width: '8%' }}>排名</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#928374', fontWeight: 'bold', width: '22%' }}>車款</th>
-                <th style={{ padding: '12px', textAlign: 'center', color: '#928374', fontWeight: 'bold', width: '14%' }}>品牌</th>
-                <th style={{ padding: '12px', textAlign: 'center', color: '#928374', fontWeight: 'bold', width: '10%' }}>CC</th>
-                <th style={{ padding: '12px', textAlign: 'right', color: '#928374', fontWeight: 'bold', width: '14%' }}>銷售量</th>
-                <th style={{ padding: '12px', textAlign: 'center', color: '#928374', fontWeight: 'bold', width: '12%' }}>市場佔比</th>
-                <th style={{ padding: '12px', textAlign: 'center', color: '#928374', fontWeight: 'bold', width: '10%' }}>變化</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fullRankingData.map((item, idx) => {
-                const bgColor = idx % 2 === 0 ? '#1d2021' : '#282828';
-                const rankColor = getRankColor(item.rank);
-                const changeColor = item.change > 0 ? '#b8f53e' : item.change < 0 ? '#fb4934' : '#928374';
-                return (
-                  <tr key={item.rank} style={{
-                    backgroundColor: bgColor,
-                    borderBottom: `1px solid #3c3836`,
-                    borderLeft: `3px solid ${rankColor.border}`
-                  }}>
-                    <td style={{ padding: '12px', textAlign: 'center', color: rankColor.border, fontWeight: 'bold' }}>
-                      {item.rank <= 3 ? rankColor.medal : ''} #{item.rank}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'left', color: '#ebdbb2', fontWeight: '500' }}>{item.model}</td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: '#a8a8b0' }}>{item.brand}</td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: '#928374' }}>{item.cc}</td>
-                    <td style={{ padding: '12px', textAlign: 'right', color: '#b8f53e', fontWeight: 'bold' }}>
-                      <div style={{
-                        display: 'inline-block',
-                        backgroundColor: '#b8f53e20',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        position: 'relative'
-                      }}>
-                        <div style={{
-                          position: 'absolute',
-                          left: '0',
-                          top: '0',
-                          height: '100%',
-                          backgroundColor: '#b8f53e10',
-                          borderRadius: '4px',
-                          width: `${(item.sales / fullRankingData[0].sales) * 100}%`
-                        }} />
-                        <span style={{ position: 'relative', zIndex: 1 }}>{item.sales.toLocaleString()}</span>
+            {/* ── Recharts Bar Chart ── */}
+            <div style={{
+              backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4,
+              padding: '20px 16px', marginBottom: 24,
+            }}>
+              <div style={{ color: C.muted, fontSize: 11, marginBottom: 12 }}>
+                $ <span style={{ color: C.green }}>chart --bar --top10</span>
+              </div>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={chartData} layout="vertical" margin={{ left: 120, right: 20, top: 4, bottom: 4 }}>
+                  <XAxis type="number" stroke={C.dim} tick={{ fill: C.muted, fontSize: 10 }} />
+                  <YAxis
+                    type="category" dataKey="name" width={110}
+                    tick={{ fill: C.text, fontSize: 11, fontFamily: FONT }}
+                    stroke={C.dim}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="sales" radius={[0, 4, 4, 0]}>
+                    {chartData.map((_, i) => (
+                      <Cell key={i} fill={i === 0 ? C.green : i < 3 ? C.gold : C.blue} fillOpacity={i < 3 ? 0.9 : 0.6} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* ── Top 3 Podium ── */}
+            {top3.length >= 3 && (
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: 12, marginBottom: 24,
+                alignItems: 'end',
+              }}>
+                {[1, 0, 2].map(idx => {
+                  const m = top3[idx];
+                  const rank = idx + 1;
+                  const realRank = idx === 1 ? 1 : idx === 0 ? 2 : 3;
+                  const rs = getRankStyle(realRank);
+                  const isFirst = realRank === 1;
+                  return (
+                    <div key={idx} style={{
+                      backgroundColor: C.card, border: `2px solid ${rs.border}`,
+                      borderRadius: 4, padding: isFirst ? '24px 16px' : '18px 14px',
+                      textAlign: 'center',
+                      boxShadow: isFirst ? `0 0 20px ${rs.border}30` : 'none',
+                    }}>
+                      <div style={{ color: rs.color, fontSize: isFirst ? 32 : 24, fontWeight: 700, marginBottom: 4 }}>
+                        {rs.label}
                       </div>
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: '#a8a8b0' }}>{item.marketShare}</td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: changeColor, fontWeight: 'bold' }}>
-                      {item.change > 0 ? '↑' : item.change < 0 ? '↓' : '→'} {Math.abs(item.change)}
-                    </td>
+                      <div style={{ color: C.text, fontSize: isFirst ? 15 : 13, fontWeight: 600, marginBottom: 4 }}>
+                        {m.display_name || m.model_code}
+                      </div>
+                      <div style={{ color: C.muted, fontSize: 11, marginBottom: 8 }}>{m.brand}</div>
+                      <div style={{ color: C.green, fontSize: isFirst ? 22 : 18, fontWeight: 700 }}>
+                        {m.total_sales.toLocaleString()}
+                      </div>
+                      <div style={{ color: C.dim, fontSize: 10 }}>台</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Full Ranking Table ── */}
+            <div style={{
+              backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4,
+              overflow: 'hidden', marginBottom: 24,
+            }}>
+              <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.border}` }}>
+                <span style={{ color: C.muted, fontSize: 11 }}>
+                  $ <span style={{ color: C.green }}>rankings --list --limit 50</span>
+                </span>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ backgroundColor: C.bg, borderBottom: `1px solid ${C.border}` }}>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', color: C.muted, width: 50 }}>#</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'left', color: C.muted }}>車款</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', color: C.muted, width: 80 }}>品牌</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center', color: C.muted, width: 70 }}>排氣量</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right', color: C.muted, width: 90 }}>銷量</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right', color: C.muted, width: 70 }}>市佔</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'left', color: C.muted, width: 140 }}></th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                </thead>
+                <tbody>
+                  {top20.map((m, i) => {
+                    const rank = i + 1;
+                    const rs = getRankStyle(rank);
+                    const cc = m.displacement_cc || 0;
+                    const ccText = cc === 0 ? '電動' : `${cc}cc`;
+                    const share = totalAll > 0 ? ((m.total_sales / totalAll) * 100).toFixed(1) : '0';
+                    const barW = top20[0] ? (m.total_sales / top20[0].total_sales) * 100 : 0;
+                    return (
+                      <tr key={i} style={{
+                        borderBottom: `1px solid ${C.border}`,
+                        borderLeft: `3px solid ${rs.border}`,
+                        backgroundColor: i % 2 === 0 ? C.bg : C.card,
+                      }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'center', color: rs.color, fontWeight: 700 }}>
+                          {rank}
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <Link href={`/bikes/${m.brand}/${encodeURIComponent(m.display_name || m.model_code)}`}
+                            style={{ color: C.text, textDecoration: 'none' }}>
+                            {m.display_name || m.model_code}
+                          </Link>
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center', color: C.muted }}>{m.brand}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center', color: C.dim }}>{ccText}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: C.green, fontWeight: 600 }}>
+                          {m.total_sales.toLocaleString()}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: C.muted }}>
+                          {share}%
+                        </td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <div style={{
+                            height: 6, backgroundColor: C.border, borderRadius: 3, overflow: 'hidden',
+                          }}>
+                            <div style={{
+                              height: '100%', borderRadius: 3,
+                              width: `${barW}%`,
+                              backgroundColor: rank <= 3 ? C.green : C.blue,
+                              opacity: rank <= 3 ? 0.8 : 0.5,
+                            }} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {filtered.length > 20 && (
+                <div style={{ padding: '12px 16px', color: C.dim, fontSize: 11, textAlign: 'center', borderTop: `1px solid ${C.border}` }}>
+                  顯示前 20 名 / 共 {filtered.length} 款
+                </div>
+              )}
+            </div>
 
-      {/* Summary Stats */}
-      <section style={{
-        padding: '40px 20px',
-        backgroundColor: '#282828',
-        borderTop: '2px solid #3c3836',
-        maxWidth: '1200px',
-        margin: '0 auto',
-        width: '100%',
-        textAlign: 'center'
-      }}>
-        <h3 style={{
-          fontFamily: "'Orbitron', monospace",
-          fontSize: '20px',
-          margin: '0 0 24px 0',
-          color: '#ebdbb2',
-          letterSpacing: '2px'
-        }}>市場統計</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-          <div style={{ backgroundColor: '#1d2021', padding: '16px', borderRadius: '8px', border: '1px solid #3c3836' }}>
-            <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 8px 0' }}>總銷量</p>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#b8f53e', margin: '0' }}>{totalSales.toLocaleString()}</p>
-            <p style={{ fontSize: '11px', color: '#928374', margin: '4px 0 0 0' }}>台/月</p>
-          </div>
-          <div style={{ backgroundColor: '#1d2021', padding: '16px', borderRadius: '8px', border: '1px solid #3c3836' }}>
-            <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 8px 0' }}>平均銷量</p>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#fabd2f', margin: '0' }}>{Math.round(totalSales / fullRankingData.length).toLocaleString()}</p>
-            <p style={{ fontSize: '11px', color: '#928374', margin: '4px 0 0 0' }}>台/車款</p>
-          </div>
-          <div style={{ backgroundColor: '#1d2021', padding: '16px', borderRadius: '8px', border: '1px solid #3c3836' }}>
-            <p style={{ fontSize: '12px', color: '#928374', margin: '0 0 8px 0' }}>排行車款</p>
-            <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#fb4934', margin: '0' }}>{fullRankingData.length}</p>
-            <p style={{ fontSize: '11px', color: '#928374', margin: '4px 0 0 0' }}>款/本月</p>
-          </div>
-        </div>
-      </section>
+            {/* ── Footer Stats ── */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16,
+            }}>
+              <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4, padding: 16, textAlign: 'center' }}>
+                <div style={{ color: C.muted, fontSize: 10 }}>篩選總銷量</div>
+                <div style={{ color: C.green, fontSize: 20, fontWeight: 700, marginTop: 4 }}>{totalFiltered.toLocaleString()}</div>
+              </div>
+              <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4, padding: 16, textAlign: 'center' }}>
+                <div style={{ color: C.muted, fontSize: 10 }}>車款數</div>
+                <div style={{ color: C.gold, fontSize: 20, fontWeight: 700, marginTop: 4 }}>{filtered.length}</div>
+              </div>
+              <div style={{ backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 4, padding: 16, textAlign: 'center' }}>
+                <div style={{ color: C.muted, fontSize: 10 }}>平均銷量</div>
+                <div style={{ color: C.blue, fontSize: 20, fontWeight: 700, marginTop: 4 }}>
+                  {filtered.length > 0 ? Math.round(totalFiltered / filtered.length).toLocaleString() : 0}
+                </div>
+              </div>
+            </div>
 
-      {/* Footer */}
-      <section style={{
-        padding: '40px 20px',
-        textAlign: 'center',
-        color: '#928374',
-        fontSize: '12px'
-      }}>
-        <p style={{ margin: '0', letterSpacing: '1px' }}>數據更新 2026-03-24 23:59 | 資料來源: Taiwan Insurance & Dealership Database</p>
-      </section>
+            <div style={{ textAlign: 'center', color: C.dim, fontSize: 11, padding: '12px 0 20px' }}>
+              資料來源：公路局機車新領牌登錄統計 · {selectedMonth}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

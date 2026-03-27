@@ -194,7 +194,7 @@ export default function RankingsPage() {
                 <span style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '16px' }}>{'>>'} POWER KING</span>
                 <span style={{ color: '#928374', fontSize: '12px', marginLeft: '8px', fontFamily: "'Noto Sans TC', sans-serif" }}>動力王</span>
               </div>
-              <Link href="/rankings/power" style={{ color: '#fabd2f', fontSize: '11px', textDecoration: 'none' }}>VIEW ALL →</Link>
+              <span style={{ color: '#504945', fontSize: '11px' }}>SPECS DATA</span>
             </div>
             <div style={{ fontSize: '12px', lineHeight: '2' }}>
               {powerTop.map((m, i) => {
@@ -220,7 +220,7 @@ export default function RankingsPage() {
                 <span style={{ color: '#fb4934', fontWeight: 'bold', fontSize: '16px' }}>$&gt; VALUE KING</span>
                 <span style={{ color: '#928374', fontSize: '12px', marginLeft: '8px', fontFamily: "'Noto Sans TC', sans-serif" }}>CP值王</span>
               </div>
-              <Link href="/rankings/value" style={{ color: '#fb4934', fontSize: '11px', textDecoration: 'none' }}>VIEW ALL →</Link>
+              <span style={{ color: '#504945', fontSize: '11px' }}>SPECS DATA</span>
             </div>
             <div style={{ fontSize: '12px', lineHeight: '2' }}>
               {valueTop.map((m, i) => (
@@ -243,7 +243,7 @@ export default function RankingsPage() {
                 <span style={{ color: '#83a598', fontWeight: 'bold', fontSize: '16px' }}>** TRENDING</span>
                 <span style={{ color: '#928374', fontSize: '12px', marginLeft: '8px', fontFamily: "'Noto Sans TC', sans-serif" }}>話題王</span>
               </div>
-              <Link href="/rankings/trending" style={{ color: '#83a598', fontSize: '11px', textDecoration: 'none' }}>VIEW ALL →</Link>
+              <span style={{ color: '#504945', fontSize: '11px' }}>COMING SOON</span>
             </div>
             <div style={{ fontSize: '12px', lineHeight: '2' }}>
               {trendingTop.map((m, i) => (
@@ -279,6 +279,26 @@ export default function RankingsPage() {
             <div>{`  資料更新月份    ${latestMonth}`}</div>
             <div>{'  資料來源       公路局 · vehicle_specs · AI 評分'}</div>
           </div>
+        </div>
+
+        {/* Quick Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '30px' }}>
+          {[
+            { href: '/rankings/sales', label: 'SALES RANKING', cn: '車款銷量排行', color: '#b8f53e' },
+            { href: '/rankings/brands', label: 'BRAND RANKING', cn: '品牌市佔排行', color: '#fabd2f' },
+            { href: '/rankings/segments', label: 'CC SEGMENTS', cn: '級距分析', color: '#83a598' },
+          ].map((nav, i) => (
+            <Link key={i} href={nav.href} style={{
+              display: 'block', textDecoration: 'none',
+              backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px',
+              padding: '20px 16px', textAlign: 'center',
+              borderBottom: `3px solid ${nav.color}`,
+            }}>
+              <div style={{ color: nav.color, fontSize: '14px', fontWeight: 700, marginBottom: '4px' }}>{nav.label}</div>
+              <div style={{ color: '#928374', fontSize: '12px', fontFamily: "'Noto Sans TC', sans-serif" }}>{nav.cn}</div>
+              <div style={{ color: nav.color, fontSize: '11px', marginTop: '8px' }}>ENTER →</div>
+            </Link>
+          ))}
         </div>
 
         <div style={{ textAlign: 'center', color: '#665c54', fontSize: '11px', paddingBottom: '20px' }}>
