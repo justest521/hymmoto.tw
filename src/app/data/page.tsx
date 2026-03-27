@@ -58,6 +58,18 @@ function fmtShortMonth(m: string): string {
   return `${parseInt(mm)}月`;
 }
 
+// Mobile detection hook
+function useIsMobile(breakpoint: number = 768): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // Animated counter hook
 function useAnimatedNumber(target: number, duration: number = 800): number {
   const [current, setCurrent] = useState(0);
@@ -133,6 +145,21 @@ const CRT_STYLES = `
   0%, 70%, 100% { opacity: 1; }
   35% { opacity: 0.4; }
 }
+@keyframes terminal-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes typing-dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+@keyframes fact-slide {
+  0% { opacity: 0; transform: translateY(6px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
 `;
 
 // Inject styles once
@@ -186,123 +213,9 @@ const LiveDot = () => (
   }} />
 );
 
-// Brand Ad Slot — premium placement for top 3 brands
-const AD_PLACEHOLDERS: Record<string, { tagline: string; cta: string; ascii: string }> = {
-  default: {
-    tagline: '廣告版位招租中',
-    cta: 'CONTACT: ad@hymmoto.tw',
-    ascii: `
-  ┌─────────────────────────────┐
-  │  ╔═══╗  PREMIUM AD SPACE   │
-  │  ║ ♦ ║  ═══════════════    │
-  │  ╚═══╝  YOUR BRAND HERE    │
-  │         ─────────────────── │
-  │  ▸ 精準觸及機車消費族群     │
-  │  ▸ 數據頁面曝光量最高位置   │
-  └─────────────────────────────┘`,
-  },
-};
+// (Ad slot config now inline in Brand Market Share section)
 
-const BrandAdSlot = ({ rank, brand, share }: { rank: number; brand: string; share: number }) => {
-  const medalColors = ['#fabd2f', '#a89984', '#d65d0e'];
-  const borderColor = medalColors[rank] || '#504945';
-  const ad = AD_PLACEHOLDERS[brand] || AD_PLACEHOLDERS.default;
-
-  return (
-    <div style={{
-      margin: '6px 0 10px 0',
-      border: `1px solid ${borderColor}40`,
-      borderRadius: '3px',
-      padding: '10px 14px',
-      backgroundColor: '#1d202180',
-      position: 'relative',
-      overflow: 'hidden',
-      animation: 'ad-border-pulse 4s ease-in-out infinite',
-      cursor: 'pointer',
-    }}>
-      {/* Scanline overlay */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)',
-        pointerEvents: 'none', zIndex: 1,
-      }} />
-      {/* Shimmer effect */}
-      <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0,
-        background: 'linear-gradient(90deg, transparent 0%, rgba(184,245,62,0.02) 50%, transparent 100%)',
-        backgroundSize: '200% 100%',
-        animation: 'ad-shimmer 6s ease-in-out infinite',
-        pointerEvents: 'none',
-      }} />
-      {/* AD tag */}
-      <div style={{
-        position: 'absolute', top: '6px', right: '8px',
-        fontSize: '8px', color: '#928374', letterSpacing: '2px',
-        border: '1px solid #3c3836', padding: '1px 5px', borderRadius: '2px',
-        animation: 'ad-tag-blink 3s ease-in-out infinite',
-        zIndex: 2,
-      }}>
-        AD
-      </div>
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <span style={{
-            fontSize: '10px', color: borderColor,
-            textShadow: `0 0 6px ${borderColor}60`,
-          }}>
-            {['🥇', '🥈', '🥉'][rank]}
-          </span>
-          <span style={{
-            fontSize: '11px', color: borderColor, fontWeight: 700, letterSpacing: '1px',
-          }}>
-            {brand} · SPONSORED
-          </span>
-          <span style={{ fontSize: '9px', color: '#504945' }}>
-            mkt:{share}%
-          </span>
-        </div>
-        {/* Placeholder ad frame */}
-        <div style={{
-          display: 'flex', gap: '12px', alignItems: 'center',
-        }}>
-          {/* Image placeholder */}
-          <div style={{
-            width: '80px', height: '48px', borderRadius: '2px',
-            border: '1px solid #3c3836',
-            backgroundColor: '#282828',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '18px', color: `${borderColor}60`,
-            overflow: 'hidden', position: 'relative', flexShrink: 0,
-          }}>
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: `linear-gradient(135deg, ${borderColor}08, ${borderColor}15, ${borderColor}08)`,
-            }} />
-            <span style={{ position: 'relative', filter: 'blur(0.3px)' }}>
-              {rank === 0 ? '🏍' : rank === 1 ? '🛵' : '⚡'}
-            </span>
-          </div>
-          {/* Ad text area */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: '11px', color: '#ebdbb2', fontWeight: 600,
-              marginBottom: '3px', letterSpacing: '0.5px',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            }}>
-              {ad.tagline}
-            </div>
-            <div style={{
-              fontSize: '9px', color: '#928374', fontFamily: "'JetBrains Mono', monospace",
-            }}>
-              {ad.cta}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+// (BrandAdSlot removed — ads now inline in Brand Market Share)
 
 // Blinking cursor component
 const Cursor = () => {
@@ -333,7 +246,223 @@ const TypeWriter = ({ text, speed = 40 }: { text: string; speed?: number }) => {
   return <>{displayed}<Cursor /></>;
 };
 
+// Interactive Terminal component
+const MOTO_FACTS = [
+  '台灣機車密度全球第一，每 1.5 人就有一台機車',
+  '125cc 級距佔台灣機車銷量超過 60%',
+  'Gogoro 2017 年上市後改變了台灣電動機車市場版圖',
+  '台灣每年新領牌機車約 70-80 萬台',
+  'SYM、KYMCO、YAMAHA 三大品牌合計市佔超過 85%',
+  '台灣是全球少數以機車為主要通勤工具的已開發地區',
+  '2024 年電動機車佔新車比例約 10%',
+  '光陽 KYMCO 是台灣最大機車外銷品牌',
+  'YAMAHA 是唯一在台設廠的日系機車品牌',
+  '台灣機車改裝文化蓬勃，每年 MOTO GP 賽事關注度高',
+  '白牌重機 (251-550cc) 近年成為成長最快的級距',
+  'PBS 機車煞車系統在 2019 年起成為新車標配',
+];
+
+const TerminalInput = ({ brandSummary, brandMonthlyData, months, endMonth }: {
+  brandSummary: { name: string; sales: number; share: number }[];
+  brandMonthlyData: BrandMonthly[];
+  months: string[];
+  endMonth: string;
+}) => {
+  const [cmd, setCmd] = useState('');
+  const [history, setHistory] = useState<{ cmd: string; output: string; color?: string }[]>([
+    { cmd: '', output: '歡迎使用 HYMMOTO 互動終端機。輸入 help 查看可用指令。', color: '#928374' },
+  ]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const executeCmd = useCallback((input: string) => {
+    const parts = input.trim().toLowerCase().split(/\s+/);
+    const command = parts[0];
+    let output = '';
+    let color = '#ebdbb2';
+
+    if (command === 'help') {
+      output = [
+        '可用指令:',
+        '  help          — 顯示說明',
+        '  top [n]       — 前 N 名品牌 (預設 5)',
+        '  compare A B   — 品牌對決',
+        '  trend BRAND   — 品牌趨勢',
+        '  fact          — 隨機機車冷知識',
+        '  fortune       — 機車占卜',
+        '  matrix        — █▓▒░ 駭客模式',
+        '  clear         — 清除歷史',
+        '  about         — 關於本站',
+      ].join('\n');
+      color = '#83a598';
+    } else if (command === 'clear') {
+      setHistory([]);
+      setCmd('');
+      return;
+    } else if (command === 'top') {
+      const n = parseInt(parts[1]) || 5;
+      output = brandSummary.slice(0, n).map((b, i) =>
+        `  ${(i < 3 ? ['🥇','🥈','🥉'][i] : `${i+1}.`).padEnd(4)} ${b.name.padEnd(12)} ${b.share}% (${b.sales.toLocaleString()})`
+      ).join('\n');
+      color = '#b8f53e';
+    } else if (command === 'compare') {
+      const a = parts[1]?.toUpperCase();
+      const b = parts[2]?.toUpperCase();
+      if (!a || !b) {
+        output = '用法: compare BRAND_A BRAND_B (例: compare SYM KYMCO)';
+        color = '#fabd2f';
+      } else {
+        const findBrand = (name: string) => brandSummary.find(x => x.name.toUpperCase() === name);
+        const ba = findBrand(a);
+        const bb = findBrand(b);
+        if (!ba || !bb) {
+          output = `找不到品牌: ${!ba ? a : ''} ${!bb ? b : ''}`.trim();
+          color = '#fb4934';
+        } else {
+          const winner = ba.sales > bb.sales ? ba : bb;
+          const ratio = Math.max(ba.sales, bb.sales) > 0 ? (Math.min(ba.sales, bb.sales) / Math.max(ba.sales, bb.sales) * 100).toFixed(0) : '0';
+          output = [
+            `  ╔══ BRAND BATTLE ══╗`,
+            `  ║ ${ba.name.padEnd(10)} vs ${bb.name.padEnd(10)} ║`,
+            `  ╠════════════════════╣`,
+            `  ║ 銷量  ${ba.sales.toLocaleString().padStart(8)} : ${bb.sales.toLocaleString().padEnd(8)} ║`,
+            `  ║ 市佔  ${(ba.share+'%').padStart(8)} : ${(bb.share+'%').padEnd(8)} ║`,
+            `  ╚════════════════════╝`,
+            `  勝者: ${winner.name} (對手僅 ${ratio}% 銷量)`,
+          ].join('\n');
+          color = '#fabd2f';
+        }
+      }
+    } else if (command === 'trend') {
+      const name = parts[1]?.toUpperCase();
+      if (!name) {
+        output = '用法: trend BRAND (例: trend GOGORO)';
+        color = '#fabd2f';
+      } else {
+        const recent = months.slice(0, Math.min(6, months.length)).reverse();
+        const values = recent.map(m => {
+          const row = brandMonthlyData.find(d => d.year_month === m && d.brand.toUpperCase() === name);
+          return row?.total || 0;
+        });
+        if (values.every(v => v === 0)) {
+          output = `找不到品牌 ${name} 的數據`;
+          color = '#fb4934';
+        } else {
+          const spark = sparkline(values);
+          output = [
+            `  ${name} 近 ${recent.length} 個月趨勢:`,
+            `  ${spark}`,
+            `  ${recent.map(m => { const [,mm] = m.split('-'); return parseInt(mm).toString().padStart(2) + '月'; }).join(' ')}`,
+            `  ${values.map(v => v.toLocaleString().padStart(5)).join(' ')}`,
+          ].join('\n');
+          color = '#b8f53e';
+        }
+      }
+    } else if (command === 'fact') {
+      output = '  💡 ' + MOTO_FACTS[Math.floor(Math.random() * MOTO_FACTS.length)];
+      color = '#83a598';
+    } else if (command === 'fortune') {
+      const fortunes = [
+        '🏍 今日運勢: 大吉！適合試乘新車',
+        '🛵 今日運勢: 中吉。記得加油',
+        '⚡ 今日運勢: 小吉。換電站有空位',
+        '🔧 今日運勢: 末吉。該保養了',
+        '🏁 今日運勢: 大吉！高速公路暢通',
+        '🌧 今日運勢: 凶。帶雨衣出門',
+        '🔑 今日運勢: 大吉！中古車撿到寶',
+      ];
+      output = '  ' + fortunes[Math.floor(Math.random() * fortunes.length)];
+      color = '#fabd2f';
+    } else if (command === 'matrix') {
+      const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ012345789';
+      output = Array.from({ length: 6 }, () =>
+        '  ' + Array.from({ length: 36 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+      ).join('\n');
+      color = '#b8f53e';
+    } else if (command === 'about') {
+      output = [
+        '  HYMMOTO.TW — 台灣機車市場數據平台',
+        '  ├─ 資料來源: 公路局機車新領牌數',
+        '  ├─ 更新頻率: 每月',
+        '  ├─ 技術棧: Next.js + Supabase',
+        '  └─ 廣告合作: ad@hymmoto.tw',
+      ].join('\n');
+      color = '#83a598';
+    } else if (command === '') {
+      return;
+    } else {
+      output = `  command not found: ${input.trim()}. 輸入 help 查看指令。`;
+      color = '#fb4934';
+    }
+    setHistory(prev => [...prev, { cmd: input, output, color }]);
+    setCmd('');
+  }, [brandSummary, brandMonthlyData, months]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [history]);
+
+  return (
+    <div style={{
+      backgroundColor: '#1d2021', border: '1px solid #3c3836', borderRadius: '4px',
+      padding: '14px', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px',
+      cursor: 'text',
+    }} onClick={() => inputRef.current?.focus()}>
+      <div ref={scrollRef} style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '8px' }}>
+        {history.map((h, i) => (
+          <div key={i} style={{ marginBottom: '4px' }}>
+            {h.cmd && (
+              <div style={{ color: '#928374' }}>
+                guest@hymmoto:~$ <span style={{ color: '#b8f53e' }}>{h.cmd}</span>
+              </div>
+            )}
+            <div style={{ color: h.color || '#ebdbb2', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{h.output}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{ color: '#928374', whiteSpace: 'nowrap' }}>guest@hymmoto:~$</span>
+        <input
+          ref={inputRef}
+          type="text"
+          value={cmd}
+          onChange={e => setCmd(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') executeCmd(cmd); }}
+          style={{
+            flex: 1, backgroundColor: 'transparent', border: 'none', outline: 'none',
+            color: '#b8f53e', fontFamily: "'JetBrains Mono', monospace", fontSize: '11px',
+            padding: 0, caretColor: '#b8f53e',
+          }}
+          placeholder="輸入指令..."
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </div>
+    </div>
+  );
+};
+
+// Fun Facts Ticker
+const FactsTicker = () => {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const iv = setInterval(() => setIdx(i => (i + 1) % MOTO_FACTS.length), 5000);
+    return () => clearInterval(iv);
+  }, []);
+  return (
+    <div style={{
+      overflow: 'hidden', height: '18px', position: 'relative',
+      fontSize: '10px', color: '#928374', fontFamily: "'Noto Sans TC', sans-serif",
+    }}>
+      <div key={idx} style={{ animation: 'fact-slide 5s ease-in-out' }}>
+        💡 {MOTO_FACTS[idx]}
+      </div>
+    </div>
+  );
+};
+
 const DataPage: React.FC = () => {
+  const isMobile = useIsMobile();
   const [allData, setAllData] = useState<VmsRow[]>([]);
   const [months, setMonths] = useState<string[]>([]);
   const [startMonth, setStartMonth] = useState('');
@@ -706,7 +835,8 @@ const DataPage: React.FC = () => {
   return (
     <div style={{
       backgroundColor: '#1d2021', color: '#ebdbb2',
-      fontFamily: "'JetBrains Mono', monospace", minHeight: '100vh', padding: '30px 24px',
+      fontFamily: "'JetBrains Mono', monospace", minHeight: '100vh',
+      padding: isMobile ? '16px 10px' : '30px 24px',
     }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
@@ -715,7 +845,7 @@ const DataPage: React.FC = () => {
           <div style={{ color: '#928374', fontSize: '12px', marginBottom: '8px' }}>
             guest@hymmoto.tw:~$ <span style={{ color: '#b8f53e' }}>data --dashboard</span>
           </div>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#ebdbb2', margin: 0, letterSpacing: '2px' }}>
+          <h1 style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 700, color: '#ebdbb2', margin: 0, letterSpacing: '2px' }}>
             DATA CENTER
           </h1>
           <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
@@ -723,14 +853,17 @@ const DataPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Fun facts ticker */}
+        <FactsTicker />
+
         {/* Main + Sidebar flex */}
-        <div style={{ display: 'flex', gap: '24px' }}>
+        <div style={{ display: 'flex', gap: isMobile ? '16px' : '24px', flexDirection: isMobile ? 'column' : 'row' }}>
 
         {/* ═══ MAIN CONTENT ═══ */}
         <div style={{ flex: 1, minWidth: 0 }}>
 
           {/* Filter Bar */}
-          <div style={{ backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', padding: '16px 20px', marginBottom: '24px' }}>
+          <div style={{ backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', padding: isMobile ? '12px' : '16px 20px', marginBottom: isMobile ? '16px' : '24px' }}>
             <div style={{ color: '#928374', fontSize: '11px', marginBottom: '12px', letterSpacing: '1px' }}>
               $ <span style={{ color: '#b8f53e' }}>filter --interactive</span>
             </div>
@@ -771,7 +904,7 @@ const DataPage: React.FC = () => {
           </div>
 
           {/* Stats Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '8px' : '12px', marginBottom: isMobile ? '20px' : '32px' }}>
             {[
               { label: 'TOTAL SALES', value: animatedTotal.toLocaleString(), sym: '>>' },
               { label: 'BRANDS', value: `${brandCount}`, sym: '>_' },
@@ -817,9 +950,9 @@ const DataPage: React.FC = () => {
                 </div>
               </div>
               <AsciiMoto duration={8} />
-              <div style={{ display: 'flex', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: isMobile ? '12px' : '20px', flexDirection: isMobile ? 'column' : 'row' }}>
                 {/* Left: Brand list */}
-                <div style={{ flex: 1, minWidth: 0, fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
+                <div style={{ flex: 1, minWidth: 0, fontSize: isMobile ? '11px' : '13px', fontFamily: "'JetBrains Mono', monospace", overflowX: isMobile ? 'auto' : 'visible' }}>
                   {brandSummary.length === 0 && <div style={{ color: '#928374' }}>  No data found.</div>}
                   {brandSummary.slice(0, 15).map((b, i) => {
                     const prevRank = prevMonthRanks.get(b.name);
@@ -877,7 +1010,11 @@ const DataPage: React.FC = () => {
 
                 {/* Right: Top 3 Ad Slots */}
                 {brandSummary.length > 0 && (
-                  <div style={{ width: '160px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{
+                    width: isMobile ? '100%' : '160px', flexShrink: 0,
+                    display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: '8px',
+                    overflowX: isMobile ? 'auto' : 'visible',
+                  }}>
                     <div style={{ color: '#504945', fontSize: '8px', letterSpacing: '2px', textAlign: 'right', marginBottom: '2px' }}>
                       SPONSORED
                     </div>
@@ -890,7 +1027,9 @@ const DataPage: React.FC = () => {
                           backgroundColor: '#1d202180', padding: '10px',
                           position: 'relative', overflow: 'hidden', cursor: 'pointer',
                           animation: `ad-border-pulse 4s ease-in-out infinite ${i * 1.2}s`,
-                          flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                          flex: isMobile ? '0 0 auto' : 1,
+                          width: isMobile ? '120px' : 'auto',
+                          display: 'flex', flexDirection: 'column', justifyContent: 'center',
                         }}>
                           {/* Shimmer */}
                           <div style={{
@@ -948,41 +1087,43 @@ const DataPage: React.FC = () => {
                 </span>
               </div>
               <div style={{ fontSize: '12px', fontFamily: "'JetBrains Mono', monospace" }}>
-                <div style={{ display: 'flex', color: '#928374', borderBottom: '1px solid #3c3836', paddingBottom: '8px', marginBottom: '4px' }}>
-                  <span style={{ width: '40px', textAlign: 'right' }}>#</span>
-                  <span style={{ width: '12px' }}></span>
-                  <span style={{ width: '100px' }}>BRAND</span>
-                  <span style={{ flex: 1, minWidth: '160px' }}>MODEL</span>
-                  <span style={{ width: '70px', textAlign: 'right' }}>SALES</span>
-                  <span style={{ width: '12px' }}></span>
-                  <span style={{ width: '80px' }}>CC</span>
-                  <span style={{ width: '12px' }}></span>
-                  <span style={{ width: '120px' }}>BAR</span>
+                <div style={{ display: 'flex', color: '#928374', borderBottom: '1px solid #3c3836', paddingBottom: '8px', marginBottom: '4px', fontSize: isMobile ? '10px' : '12px' }}>
+                  <span style={{ width: isMobile ? '28px' : '40px', textAlign: 'right' }}>#</span>
+                  <span style={{ width: '8px' }}></span>
+                  {!isMobile && <span style={{ width: '100px' }}>BRAND</span>}
+                  <span style={{ flex: 1, minWidth: isMobile ? '80px' : '160px' }}>MODEL</span>
+                  <span style={{ width: isMobile ? '55px' : '70px', textAlign: 'right' }}>SALES</span>
+                  {!isMobile && <><span style={{ width: '12px' }}></span><span style={{ width: '80px' }}>CC</span></>}
+                  {!isMobile && <><span style={{ width: '12px' }}></span><span style={{ width: '120px' }}>BAR</span></>}
                 </div>
                 {loading ? (
                   <div style={{ color: '#928374', padding: '16px 0' }}>  Loading...</div>
                 ) : filtered.length === 0 ? (
                   <div style={{ color: '#928374', padding: '16px 0' }}>  No matching models.</div>
                 ) : (
-                  filtered.slice(0, 30).map((r, i) => (
-                    <div key={`${r.brand}-${r.model_code}`} style={{ display: 'flex', lineHeight: '2', color: i < 3 ? '#fabd2f' : '#ebdbb2' }}>
-                      <span style={{ width: '40px', textAlign: 'right', color: '#928374' }}>
+                  filtered.slice(0, isMobile ? 20 : 30).map((r, i) => (
+                    <div key={`${r.brand}-${r.model_code}`} style={{ display: 'flex', lineHeight: '2', color: i < 3 ? '#fabd2f' : '#ebdbb2', fontSize: isMobile ? '10px' : '12px' }}>
+                      <span style={{ width: isMobile ? '28px' : '40px', textAlign: 'right', color: '#928374' }}>
                         {i < 3 ? ['🥇', '🥈', '🥉'][i] : `${i + 1}`}
                       </span>
-                      <span style={{ width: '12px' }}></span>
-                      <span style={{ width: '100px', color: '#b8f53e' }}>{r.brand}</span>
-                      <span style={{ flex: 1, minWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {r.display_name || r.model_code}
+                      <span style={{ width: '8px' }}></span>
+                      {!isMobile && <span style={{ width: '100px', color: '#b8f53e' }}>{r.brand}</span>}
+                      <span style={{ flex: 1, minWidth: isMobile ? '80px' : '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {isMobile ? `${r.brand} ${r.display_name || r.model_code}` : (r.display_name || r.model_code)}
                       </span>
-                      <span style={{ width: '70px', textAlign: 'right', color: '#fabd2f', fontWeight: 700 }}>
+                      <span style={{ width: isMobile ? '55px' : '70px', textAlign: 'right', color: '#fabd2f', fontWeight: 700 }}>
                         {r.total_sales.toLocaleString()}
                       </span>
-                      <span style={{ width: '12px' }}></span>
-                      <span style={{ width: '80px', color: '#928374', fontSize: '11px' }}>
-                        {r.displacement_cc ? `${r.displacement_cc}cc` : r.displacement === '電動機車' ? 'EV' : '-'}
-                      </span>
-                      <span style={{ width: '12px' }}></span>
-                      <span style={{ width: '120px', whiteSpace: 'pre', fontSize: '11px' }}>{bar(r.total_sales, maxSales, 14)}</span>
+                      {!isMobile && (
+                        <>
+                          <span style={{ width: '12px' }}></span>
+                          <span style={{ width: '80px', color: '#928374', fontSize: '11px' }}>
+                            {r.displacement_cc ? `${r.displacement_cc}cc` : r.displacement === '電動機車' ? 'EV' : '-'}
+                          </span>
+                          <span style={{ width: '12px' }}></span>
+                          <span style={{ width: '120px', whiteSpace: 'pre', fontSize: '11px' }}>{bar(r.total_sales, maxSales, 14)}</span>
+                        </>
+                      )}
                     </div>
                   ))
                 )}
@@ -1022,6 +1163,19 @@ const DataPage: React.FC = () => {
             </section>
           )}
 
+          {/* Interactive Terminal */}
+          <section style={{ marginBottom: '32px' }}>
+            <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
+              $ <span style={{ color: '#b8f53e' }}>interactive --terminal</span>
+            </div>
+            <TerminalInput
+              brandSummary={brandSummary}
+              brandMonthlyData={brandMonthlyData}
+              months={months}
+              endMonth={endMonth}
+            />
+          </section>
+
           {/* Quick Navigation */}
           <section style={{ marginBottom: '40px' }}>
             <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
@@ -1036,8 +1190,8 @@ const DataPage: React.FC = () => {
               ].map((link, i) => (
                 <Link key={i} href={link.href} style={{
                   backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px',
-                  padding: '14px 20px', textDecoration: 'none', color: '#ebdbb2',
-                  transition: 'all 0.15s', flex: '1', minWidth: '180px',
+                  padding: isMobile ? '12px 14px' : '14px 20px', textDecoration: 'none', color: '#ebdbb2',
+                  transition: 'all 0.15s', flex: '1', minWidth: isMobile ? '140px' : '180px',
                 }}>
                   <div style={{ color: '#b8f53e', fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{link.sym} {link.label}</div>
                   <div style={{ color: '#928374', fontSize: '11px', fontFamily: "'Noto Sans TC', sans-serif" }}>{link.desc}</div>
@@ -1049,7 +1203,12 @@ const DataPage: React.FC = () => {
         </div>
 
         {/* ═══ RIGHT SIDEBAR with CRT effects ═══ */}
-        <div style={{ width: '300px', flexShrink: 0, alignSelf: 'flex-start', position: 'sticky', top: '30px' }}>
+        <div style={{
+          width: isMobile ? '100%' : '300px', flexShrink: 0,
+          alignSelf: 'flex-start',
+          position: isMobile ? 'relative' : 'sticky',
+          top: isMobile ? 'auto' : '30px',
+        }}>
           <StyleInjector />
 
           {/* CRT scanline overlay */}
