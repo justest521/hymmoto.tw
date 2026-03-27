@@ -79,6 +79,53 @@ function useAnimatedNumber(target: number, duration: number = 800): number {
   return current;
 }
 
+// CSS keyframe animations injected once
+const CRT_STYLES = `
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+@keyframes glow-pulse {
+  0%, 100% { text-shadow: 0 0 4px currentColor, 0 0 8px currentColor; }
+  50% { text-shadow: 0 0 8px currentColor, 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+@keyframes flicker {
+  0%, 97%, 100% { opacity: 1; }
+  98% { opacity: 0.8; }
+  99% { opacity: 0.95; }
+}
+@keyframes bar-fill {
+  from { max-width: 0; }
+  to { max-width: 100%; }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes border-glow {
+  0%, 100% { border-color: #3c3836; }
+  50% { border-color: #504945; }
+}
+`;
+
+// Inject styles once
+const StyleInjector = () => (
+  <style dangerouslySetInnerHTML={{ __html: CRT_STYLES }} />
+);
+
+// Live dot indicator
+const LiveDot = () => (
+  <span style={{
+    display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%',
+    backgroundColor: '#b8f53e', marginRight: '6px', animation: 'dot-pulse 1.5s ease-in-out infinite',
+    boxShadow: '0 0 4px #b8f53e, 0 0 8px #b8f53e',
+  }} />
+);
+
 // Blinking cursor component
 const Cursor = () => {
   const [visible, setVisible] = useState(true);
@@ -676,17 +723,38 @@ const DataPage: React.FC = () => {
 
         </div>
 
-        {/* ═══ RIGHT SIDEBAR ═══ */}
+        {/* ═══ RIGHT SIDEBAR with CRT effects ═══ */}
         <div style={{ width: '300px', flexShrink: 0, alignSelf: 'flex-start', position: 'sticky', top: '30px' }}>
+          <StyleInjector />
+
+          {/* CRT scanline overlay */}
+          <div style={{
+            position: 'relative', animation: 'flicker 8s infinite',
+          }}>
+            {/* Scanline effect overlay */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
+              pointerEvents: 'none', zIndex: 1, borderRadius: '4px',
+            }} />
 
             {/* System Log */}
-            <div style={{ ...sideCardStyle, fontFamily: "'JetBrains Mono', monospace" }}>
-              <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
-                SYSTEM LOG
+            <div style={{ ...sideCardStyle, fontFamily: "'JetBrains Mono', monospace", position: 'relative', overflow: 'hidden' }}>
+              {/* Subtle scan beam */}
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+                background: 'linear-gradient(90deg, transparent, rgba(184,245,62,0.15), transparent)',
+                animation: 'scanline 4s linear infinite', pointerEvents: 'none',
+              }} />
+              <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+                <LiveDot />SYSTEM LOG
               </div>
               <div style={{ fontSize: '10px', lineHeight: '1.8', maxHeight: '120px', overflow: 'hidden' }}>
                 {logLines.filter(Boolean).map((line, i) => (
-                  <div key={i} style={{ color: (line || '').includes('✓') || (line || '').includes('OK') ? '#b8f53e' : (line || '').includes('SYS') ? '#928374' : '#83a598' }}>
+                  <div key={i} style={{
+                    color: (line || '').includes('✓') || (line || '').includes('OK') ? '#b8f53e' : (line || '').includes('SYS') ? '#928374' : '#83a598',
+                    animation: `fade-in-up 0.3s ease-out`,
+                  }}>
                     {line}
                   </div>
                 ))}
@@ -700,14 +768,16 @@ const DataPage: React.FC = () => {
 
             {/* MoM Change */}
             {momData && (
-              <div style={sideCardStyle}>
+              <div style={{ ...sideCardStyle, animation: 'border-glow 3s ease-in-out infinite' }}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
                   MoM CHANGE{selectedBrand !== 'all' ? ` · ${selectedBrand}` : ''}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
                   <span style={{
                     color: momData.change >= 0 ? '#b8bb26' : '#fb4934',
-                    fontSize: '22px', fontWeight: 700,
+                    fontSize: '24px', fontWeight: 700,
+                    animation: 'glow-pulse 2s ease-in-out infinite',
+                    textShadow: `0 0 8px ${momData.change >= 0 ? '#b8bb26' : '#fb4934'}`,
                   }}>
                     {momData.change >= 0 ? '+' : ''}{momData.change.toFixed(1)}%
                   </span>
@@ -717,19 +787,33 @@ const DataPage: React.FC = () => {
                   {fmtMonth(endMonth)}: {momData.curTotal.toLocaleString()}<br />
                   {fmtMonth(momData.prevMonth)}: {momData.prevTotal.toLocaleString()}
                 </div>
+                {/* Mini comparison bar */}
+                <div style={{ marginTop: '8px', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <div style={{ flex: 1, height: '3px', backgroundColor: '#3c3836', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: '2px',
+                      backgroundColor: momData.change >= 0 ? '#b8bb26' : '#fb4934',
+                      width: `${Math.min(100, Math.abs(momData.change) * 2)}%`,
+                      animation: 'bar-fill 1s ease-out',
+                      boxShadow: `0 0 4px ${momData.change >= 0 ? '#b8bb26' : '#fb4934'}`,
+                    }} />
+                  </div>
+                </div>
               </div>
             )}
 
             {/* YoY Change */}
             {yoyData && (
-              <div style={sideCardStyle}>
+              <div style={{ ...sideCardStyle, animation: 'border-glow 3s ease-in-out infinite 1.5s' }}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
                   YoY CHANGE{selectedBrand !== 'all' ? ` · ${selectedBrand}` : ''}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '6px' }}>
                   <span style={{
                     color: yoyData.change >= 0 ? '#b8bb26' : '#fb4934',
-                    fontSize: '22px', fontWeight: 700,
+                    fontSize: '24px', fontWeight: 700,
+                    animation: 'glow-pulse 2s ease-in-out infinite 1s',
+                    textShadow: `0 0 8px ${yoyData.change >= 0 ? '#b8bb26' : '#fb4934'}`,
                   }}>
                     {yoyData.change >= 0 ? '+' : ''}{yoyData.change.toFixed(1)}%
                   </span>
@@ -738,6 +822,17 @@ const DataPage: React.FC = () => {
                 <div style={{ fontSize: '10px', color: '#928374', lineHeight: '1.6' }}>
                   {fmtMonth(endMonth)}: {yoyData.curTotal.toLocaleString()}<br />
                   {fmtMonth(yoyData.prevYear)}: {yoyData.prevTotal.toLocaleString()}
+                </div>
+                <div style={{ marginTop: '8px', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <div style={{ flex: 1, height: '3px', backgroundColor: '#3c3836', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: '2px',
+                      backgroundColor: yoyData.change >= 0 ? '#b8bb26' : '#fb4934',
+                      width: `${Math.min(100, Math.abs(yoyData.change) * 2)}%`,
+                      animation: 'bar-fill 1s ease-out 0.3s',
+                      boxShadow: `0 0 4px ${yoyData.change >= 0 ? '#b8bb26' : '#fb4934'}`,
+                    }} />
+                  </div>
                 </div>
               </div>
             )}
@@ -748,7 +843,10 @@ const DataPage: React.FC = () => {
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
                   MARKET PULSE{selectedBrand !== 'all' ? ` · ${selectedBrand}` : ''}
                 </div>
-                <div style={{ fontSize: '16px', letterSpacing: '2px', color: '#b8f53e', marginBottom: '8px' }}>
+                <div style={{
+                  fontSize: '18px', letterSpacing: '2px', color: '#b8f53e', marginBottom: '8px',
+                  textShadow: '0 0 6px rgba(184,245,62,0.4)',
+                }}>
                   {sparkline(recentSparkData.map(d => d.total))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#928374' }}>
@@ -756,8 +854,8 @@ const DataPage: React.FC = () => {
                   <span>{fmtShortMonth(recentSparkData[recentSparkData.length - 1]?.month || '')}</span>
                 </div>
                 <div style={{ fontSize: '10px', color: '#928374', marginTop: '8px' }}>
-                  高: {Math.max(...recentSparkData.map(d => d.total)).toLocaleString()} ·
-                  低: {Math.min(...recentSparkData.map(d => d.total)).toLocaleString()}
+                  <span style={{ color: '#b8bb26' }}>H</span> {Math.max(...recentSparkData.map(d => d.total)).toLocaleString()}{' · '}
+                  <span style={{ color: '#fb4934' }}>L</span> {Math.min(...recentSparkData.map(d => d.total)).toLocaleString()}
                 </div>
               </div>
             )}
@@ -767,41 +865,55 @@ const DataPage: React.FC = () => {
               <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
                 BRAND TRENDS
               </div>
-              {brandSparklines.map((bs, i) => (
-                <div key={i} style={{ marginBottom: i < brandSparklines.length - 1 ? '10px' : 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                    <span style={{ color: '#b8f53e', fontSize: '11px', fontWeight: 700 }}>{bs.brand}</span>
-                    <span style={{ color: '#928374', fontSize: '10px' }}>
-                      {bs.values.length > 0 ? bs.values[bs.values.length - 1].toLocaleString() : '-'}
-                    </span>
+              {brandSparklines.map((bs, i) => {
+                const colors = ['#b8f53e', '#fabd2f', '#83a598'];
+                const color = colors[i % colors.length];
+                return (
+                  <div key={i} style={{ marginBottom: i < brandSparklines.length - 1 ? '12px' : 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                      <span style={{ color, fontSize: '11px', fontWeight: 700 }}>{bs.brand}</span>
+                      <span style={{ color: '#ebdbb2', fontSize: '11px', fontWeight: 700,
+                        textShadow: `0 0 4px ${color}`,
+                      }}>
+                        {bs.values.length > 0 ? bs.values[bs.values.length - 1].toLocaleString() : '-'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '15px', letterSpacing: '1px', color, textShadow: `0 0 4px ${color}40` }}>
+                      {bs.spark}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '14px', letterSpacing: '1px', color: ['#fb4934', '#fabd2f', '#83a598'][i] }}>
-                    {bs.spark}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Top Movers (only when no specific brand selected) */}
+            {/* Top Movers */}
             {brandMovers.length > 0 && selectedBrand === 'all' && (
               <div style={sideCardStyle}>
                 <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px' }}>
                   TOP MOVERS (MoM)
                 </div>
-                <div style={{ fontSize: '11px', lineHeight: '2' }}>
+                <div style={{ fontSize: '11px', lineHeight: '2.2' }}>
                   {brandMovers.slice(0, 3).map((m, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: '#ebdbb2' }}>{m.brand}</span>
-                      <span style={{ color: '#b8bb26', fontWeight: 700 }}>
+                      <span style={{
+                        color: '#b8bb26', fontWeight: 700, fontSize: '12px',
+                        textShadow: '0 0 4px rgba(184,187,38,0.4)',
+                      }}>
                         +{m.change > 999 ? 'NEW' : `${m.change.toFixed(0)}%`}
                       </span>
                     </div>
                   ))}
-                  <div style={{ borderTop: '1px solid #3c3836', marginTop: '4px', paddingTop: '4px' }}>
+                  <div style={{ borderTop: '1px solid #3c3836', marginTop: '6px', paddingTop: '6px' }}>
                     {brandMovers.filter(m => m.change < 0).slice(-3).reverse().map((m, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: '#ebdbb2' }}>{m.brand}</span>
-                        <span style={{ color: '#fb4934', fontWeight: 700 }}>{m.change.toFixed(0)}%</span>
+                        <span style={{
+                          color: '#fb4934', fontWeight: 700, fontSize: '12px',
+                          textShadow: '0 0 4px rgba(251,73,52,0.4)',
+                        }}>
+                          {m.change.toFixed(0)}%
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -809,6 +921,7 @@ const DataPage: React.FC = () => {
               </div>
             )}
 
+          </div>
         </div>
 
         </div>{/* close flex */}
