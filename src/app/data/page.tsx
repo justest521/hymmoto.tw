@@ -445,23 +445,26 @@ const DataPage: React.FC = () => {
       backgroundColor: '#1d2021', color: '#ebdbb2',
       fontFamily: "'JetBrains Mono', monospace", minHeight: '100vh', padding: '30px 24px',
     }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', gap: '24px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+
+        {/* Header (full width, above flex) */}
+        <div style={{ marginBottom: '24px', borderBottom: '1px solid #3c3836', paddingBottom: '20px' }}>
+          <div style={{ color: '#928374', fontSize: '12px', marginBottom: '8px' }}>
+            guest@hymmoto.tw:~$ <span style={{ color: '#b8f53e' }}>data --dashboard</span>
+          </div>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#ebdbb2', margin: 0, letterSpacing: '2px' }}>
+            DATA CENTER
+          </h1>
+          <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
+            台灣機車市場即時數據分析平台 · {rangeLabel}
+          </div>
+        </div>
+
+        {/* Main + Sidebar flex */}
+        <div style={{ display: 'flex', gap: '24px' }}>
 
         {/* ═══ MAIN CONTENT ═══ */}
         <div style={{ flex: 1, minWidth: 0 }}>
-
-          {/* Header */}
-          <div style={{ marginBottom: '24px', borderBottom: '1px solid #3c3836', paddingBottom: '20px' }}>
-            <div style={{ color: '#928374', fontSize: '12px', marginBottom: '8px' }}>
-              guest@hymmoto.tw:~$ <span style={{ color: '#b8f53e' }}>data --dashboard</span>
-            </div>
-            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#ebdbb2', margin: 0, letterSpacing: '2px' }}>
-              DATA CENTER
-            </h1>
-            <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
-              台灣機車市場即時數據分析平台 · {rangeLabel}
-            </div>
-          </div>
 
           {/* Filter Bar */}
           <div style={{ backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px', padding: '16px 20px', marginBottom: '24px' }}>
@@ -808,6 +811,7 @@ const DataPage: React.FC = () => {
 
         </div>
 
+        </div>{/* close flex */}
       </div>
     </div>
   );
