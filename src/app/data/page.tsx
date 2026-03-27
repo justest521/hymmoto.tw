@@ -121,6 +121,18 @@ const CRT_STYLES = `
   0% { opacity: 0.6; transform: translateX(0) scale(1); }
   100% { opacity: 0; transform: translateX(-20px) scale(2); }
 }
+@keyframes ad-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes ad-border-pulse {
+  0%, 100% { border-color: #504945; box-shadow: 0 0 0px transparent; }
+  50% { border-color: #b8f53e40; box-shadow: 0 0 8px rgba(184,245,62,0.08); }
+}
+@keyframes ad-tag-blink {
+  0%, 70%, 100% { opacity: 1; }
+  35% { opacity: 0.4; }
+}
 `;
 
 // Inject styles once
@@ -173,6 +185,124 @@ const LiveDot = () => (
     boxShadow: '0 0 4px #b8f53e, 0 0 8px #b8f53e',
   }} />
 );
+
+// Brand Ad Slot — premium placement for top 3 brands
+const AD_PLACEHOLDERS: Record<string, { tagline: string; cta: string; ascii: string }> = {
+  default: {
+    tagline: '廣告版位招租中',
+    cta: 'CONTACT: ad@hymmoto.tw',
+    ascii: `
+  ┌─────────────────────────────┐
+  │  ╔═══╗  PREMIUM AD SPACE   │
+  │  ║ ♦ ║  ═══════════════    │
+  │  ╚═══╝  YOUR BRAND HERE    │
+  │         ─────────────────── │
+  │  ▸ 精準觸及機車消費族群     │
+  │  ▸ 數據頁面曝光量最高位置   │
+  └─────────────────────────────┘`,
+  },
+};
+
+const BrandAdSlot = ({ rank, brand, share }: { rank: number; brand: string; share: number }) => {
+  const medalColors = ['#fabd2f', '#a89984', '#d65d0e'];
+  const borderColor = medalColors[rank] || '#504945';
+  const ad = AD_PLACEHOLDERS[brand] || AD_PLACEHOLDERS.default;
+
+  return (
+    <div style={{
+      margin: '6px 0 10px 0',
+      border: `1px solid ${borderColor}40`,
+      borderRadius: '3px',
+      padding: '10px 14px',
+      backgroundColor: '#1d202180',
+      position: 'relative',
+      overflow: 'hidden',
+      animation: 'ad-border-pulse 4s ease-in-out infinite',
+      cursor: 'pointer',
+    }}>
+      {/* Scanline overlay */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 6px)',
+        pointerEvents: 'none', zIndex: 1,
+      }} />
+      {/* Shimmer effect */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0,
+        background: 'linear-gradient(90deg, transparent 0%, rgba(184,245,62,0.02) 50%, transparent 100%)',
+        backgroundSize: '200% 100%',
+        animation: 'ad-shimmer 6s ease-in-out infinite',
+        pointerEvents: 'none',
+      }} />
+      {/* AD tag */}
+      <div style={{
+        position: 'absolute', top: '6px', right: '8px',
+        fontSize: '8px', color: '#928374', letterSpacing: '2px',
+        border: '1px solid #3c3836', padding: '1px 5px', borderRadius: '2px',
+        animation: 'ad-tag-blink 3s ease-in-out infinite',
+        zIndex: 2,
+      }}>
+        AD
+      </div>
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <span style={{
+            fontSize: '10px', color: borderColor,
+            textShadow: `0 0 6px ${borderColor}60`,
+          }}>
+            {['🥇', '🥈', '🥉'][rank]}
+          </span>
+          <span style={{
+            fontSize: '11px', color: borderColor, fontWeight: 700, letterSpacing: '1px',
+          }}>
+            {brand} · SPONSORED
+          </span>
+          <span style={{ fontSize: '9px', color: '#504945' }}>
+            mkt:{share}%
+          </span>
+        </div>
+        {/* Placeholder ad frame */}
+        <div style={{
+          display: 'flex', gap: '12px', alignItems: 'center',
+        }}>
+          {/* Image placeholder */}
+          <div style={{
+            width: '80px', height: '48px', borderRadius: '2px',
+            border: '1px solid #3c3836',
+            backgroundColor: '#282828',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '18px', color: `${borderColor}60`,
+            overflow: 'hidden', position: 'relative', flexShrink: 0,
+          }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(135deg, ${borderColor}08, ${borderColor}15, ${borderColor}08)`,
+            }} />
+            <span style={{ position: 'relative', filter: 'blur(0.3px)' }}>
+              {rank === 0 ? '🏍' : rank === 1 ? '🛵' : '⚡'}
+            </span>
+          </div>
+          {/* Ad text area */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: '11px', color: '#ebdbb2', fontWeight: 600,
+              marginBottom: '3px', letterSpacing: '0.5px',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>
+              {ad.tagline}
+            </div>
+            <div style={{
+              fontSize: '9px', color: '#928374', fontFamily: "'JetBrains Mono', monospace",
+            }}>
+              {ad.cta}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Blinking cursor component
 const Cursor = () => {
@@ -695,7 +825,8 @@ const DataPage: React.FC = () => {
                   const extra = brandRowExtras.get(b.name);
                   const momVal = extra?.mom;
                   return (
-                    <div key={b.name} style={{
+                    <React.Fragment key={b.name}>
+                    <div style={{
                       display: 'flex', alignItems: 'center', lineHeight: '2.2',
                       animation: `fade-in-up 0.3s ease-out ${i * 0.05}s both`,
                     }}>
@@ -736,6 +867,9 @@ const DataPage: React.FC = () => {
                         </span>
                       )}
                     </div>
+                    {/* Ad slot for top 3 brands */}
+                    {i < 3 && <BrandAdSlot rank={i} brand={b.name} share={b.share} />}
+                    </React.Fragment>
                   );
                 })}
                 {brandSummary.length > 15 && (
