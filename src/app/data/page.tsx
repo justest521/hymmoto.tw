@@ -867,8 +867,6 @@ const DataPage: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    {/* Ad slot for top 3 brands */}
-                    {i < 3 && <BrandAdSlot rank={i} brand={b.name} share={b.share} />}
                     </React.Fragment>
                   );
                 })}
@@ -1186,6 +1184,76 @@ const DataPage: React.FC = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Sponsored Ad Slots (Top 3 Brands) ── */}
+            {brandSummary.length > 0 && (
+              <div style={sideCardStyle}>
+                <div style={{ color: '#fabd2f', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>SPONSORED</span>
+                  <span style={{
+                    fontSize: '8px', color: '#504945', border: '1px solid #3c3836',
+                    padding: '1px 5px', borderRadius: '2px',
+                    animation: 'ad-tag-blink 3s ease-in-out infinite',
+                  }}>AD</span>
+                </div>
+                {brandSummary.slice(0, 3).map((b, i) => {
+                  const medalColors = ['#fabd2f', '#a89984', '#d65d0e'];
+                  const color = medalColors[i];
+                  return (
+                    <div key={b.name} style={{
+                      padding: '8px 10px', marginBottom: i < 2 ? '8px' : 0,
+                      border: `1px solid ${color}25`,
+                      borderRadius: '3px', backgroundColor: '#1d202180',
+                      position: 'relative', overflow: 'hidden', cursor: 'pointer',
+                      animation: `ad-border-pulse 4s ease-in-out infinite ${i * 1.2}s`,
+                    }}>
+                      {/* Shimmer */}
+                      <div style={{
+                        position: 'absolute', inset: 0, zIndex: 0,
+                        background: 'linear-gradient(90deg, transparent 0%, rgba(184,245,62,0.02) 50%, transparent 100%)',
+                        backgroundSize: '200% 100%', animation: `ad-shimmer 6s ease-in-out infinite ${i * 0.8}s`,
+                        pointerEvents: 'none',
+                      }} />
+                      {/* Scanlines */}
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
+                        pointerEvents: 'none', zIndex: 1,
+                      }} />
+                      <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        {/* Brand image placeholder */}
+                        <div style={{
+                          width: '48px', height: '48px', borderRadius: '3px',
+                          border: `1px solid ${color}30`, backgroundColor: '#28282890',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '20px', flexShrink: 0,
+                        }}>
+                          <span style={{ filter: 'saturate(0.7) brightness(0.9)' }}>
+                            {i === 0 ? '🏍' : i === 1 ? '🛵' : '⚡'}
+                          </span>
+                        </div>
+                        {/* Info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
+                            <span style={{ fontSize: '9px' }}>{['🥇', '🥈', '🥉'][i]}</span>
+                            <span style={{ fontSize: '11px', color, fontWeight: 700, letterSpacing: '0.5px' }}>{b.name}</span>
+                          </div>
+                          <div style={{ fontSize: '9px', color: '#928374', marginBottom: '3px' }}>
+                            mkt: {b.share}% · {b.sales.toLocaleString()} 台
+                          </div>
+                          <div style={{ fontSize: '9px', color: '#504945', fontStyle: 'italic' }}>
+                            廣告版位招租中
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ fontSize: '9px', color: '#504945', marginTop: '8px', textAlign: 'center', letterSpacing: '0.5px' }}>
+                  ad@hymmoto.tw
                 </div>
               </div>
             )}
