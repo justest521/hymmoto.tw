@@ -30,59 +30,112 @@ const CC_SEGMENTS = [
   { id: '551', label: '551cc+', match: (d: string | null) => d === '551cc以上' },
 ];
 
+function fmtMonth(m: string): string {
+  const [y, mm] = m.split('-');
+  return `${y}年${parseInt(mm)}月`;
+}
+
 const DataPage: React.FC = () => {
   const [allData, setAllData] = useState<VmsRow[]>([]);
   const [months, setMonths] = useState<string[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [startMonth, setStartMonth] = useState('');
+  const [endMonth, setEndMonth] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedCC, setSelectedCC] = useState('all');
   const [searchModel, setSearchModel] = useState('');
   const [loading, setLoading] = useState(true);
+  const [rangePreset, setRangePreset] = useState('1');
 
-  // Fetch all months list + selected month data
+  // Fetch months list
   useEffect(() => {
     const fetchMonths = async () => {
       const supabase = createClient();
       const { data } = await supabase
-        .from('vehicle_monthly_sales')
+        .from('sales_brand_monthly')
         .select('year_month')
         .order('year_month', { ascending: false });
       if (data) {
         const unique = [...new Set(data.map(d => d.year_month))];
         setMonths(unique);
-        if (!selectedMonth && unique.length > 0) setSelectedMonth(unique[0]);
+        if (unique.length > 0) {
+          setEndMonth(unique[0]);
+          setStartMonth(unique[0]);
+        }
       }
     };
     fetchMonths();
   }, []);
 
+  // Quick range presets
+  const applyPreset = (preset: string) => {
+    if (months.length === 0) return;
+    setRangePreset(preset);
+    const latest = months[0];
+    setEndMonth(latest);
+    if (preset === '1') {
+      setStartMonth(latest);
+    } else if (preset === '3') {
+      setStartMonth(months[Math.min(2, months.length - 1)]);
+    } else if (preset === '6') {
+      setStartMonth(months[Math.min(5, months.length - 1)]);
+    } else if (preset === '12') {
+      setStartMonth(months[Math.min(11, months.length - 1)]);
+    } else if (preset === 'all') {
+      setStartMonth(months[months.length - 1]);
+    }
+  };
+
+  // Fetch data for selected range
   useEffect(() => {
-    if (!selectedMonth) return;
+    if (!startMonth || !endMonth) return;
     const fetchData = async () => {
       setLoading(true);
       const supabase = createClient();
+      // Ensure start <= end
+      const from = startMonth <= endMonth ? startMonth : endMonth;
+      const to = startMonth <= endMonth ? endMonth : startMonth;
       const { data } = await supabase
         .from('vehicle_monthly_sales')
         .select('year_month, brand, model_code, display_name, total_sales, displacement, displacement_cc')
-        .eq('year_month', selectedMonth)
+        .gte('year_month', from)
+        .lte('year_month', to)
         .gt('total_sales', 0)
-        .order('total_sales', { ascending: false });
+        .order('total_sales', { ascending: false })
+        .limit(10000);
       setAllData(data || []);
       setLoading(false);
     };
     fetchData();
-  }, [selectedMonth]);
+  }, [startMonth, endMonth]);
 
-  // Derived: brands list
+  const isRange = startMonth !== endMonth && startMonth && endMonth;
+
+  // Aggregate data by model when range is selected
+  const aggregatedData = useMemo(() => {
+    if (!isRange) return allData;
+    const map = new Map<string, VmsRow>();
+    allData.forEach(r => {
+      const key = `${r.brand}|${r.model_code}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.total_sales += r.total_sales;
+      } else {
+        map.set(key, { ...r });
+      }
+    });
+    return [...map.values()].sort((a, b) => b.total_sales - a.total_sales);
+  }, [allData, isRange]);
+
+  // Derived: brands list from aggregated
   const brands = useMemo(() => {
     const map = new Map<string, number>();
-    allData.forEach(r => map.set(r.brand, (map.get(r.brand) || 0) + r.total_sales));
+    aggregatedData.forEach(r => map.set(r.brand, (map.get(r.brand) || 0) + r.total_sales));
     return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([b]) => b);
-  }, [allData]);
+  }, [aggregatedData]);
 
   // Filtered data
   const filtered = useMemo(() => {
-    let d = allData;
+    let d = aggregatedData;
     if (selectedBrand !== 'all') d = d.filter(r => r.brand === selectedBrand);
     if (selectedCC !== 'all') {
       const seg = CC_SEGMENTS.find(s => s.id === selectedCC);
@@ -96,13 +149,21 @@ const DataPage: React.FC = () => {
       );
     }
     return d;
-  }, [allData, selectedBrand, selectedCC, searchModel]);
+  }, [aggregatedData, selectedBrand, selectedCC, searchModel]);
 
   // Stats
   const totalSales = filtered.reduce((s, r) => s + r.total_sales, 0);
   const brandCount = new Set(filtered.map(r => r.brand)).size;
   const modelCount = filtered.length;
   const maxSales = filtered[0]?.total_sales || 1;
+
+  // Count months in range
+  const rangeMonthCount = useMemo(() => {
+    if (!startMonth || !endMonth) return 0;
+    const from = startMonth <= endMonth ? startMonth : endMonth;
+    const to = startMonth <= endMonth ? endMonth : startMonth;
+    return months.filter(m => m >= from && m <= to).length;
+  }, [months, startMonth, endMonth]);
 
   // Brand summary
   const brandSummary = useMemo(() => {
@@ -134,6 +195,25 @@ const DataPage: React.FC = () => {
     }).filter(s => s.total > 0);
   }, [filtered]);
 
+  // Monthly trend for range
+  const monthlyTrend = useMemo(() => {
+    if (!isRange) return [];
+    const from = startMonth <= endMonth ? startMonth : endMonth;
+    const to = startMonth <= endMonth ? endMonth : startMonth;
+    const rangeMonths = months.filter(m => m >= from && m <= to).reverse();
+    const map = new Map<string, number>();
+    let d = allData;
+    if (selectedBrand !== 'all') d = d.filter(r => r.brand === selectedBrand);
+    if (selectedCC !== 'all') {
+      const seg = CC_SEGMENTS.find(s => s.id === selectedCC);
+      if (seg?.match) d = d.filter(r => seg.match!(r.displacement));
+    }
+    d.forEach(r => map.set(r.year_month, (map.get(r.year_month) || 0) + r.total_sales));
+    return rangeMonths.map(m => ({ month: m, sales: map.get(m) || 0 }));
+  }, [allData, months, startMonth, endMonth, isRange, selectedBrand, selectedCC]);
+
+  const maxTrend = Math.max(...monthlyTrend.map(t => t.sales), 1);
+
   const selectStyle: React.CSSProperties = {
     backgroundColor: '#282828',
     color: '#b8f53e',
@@ -161,10 +241,11 @@ const DataPage: React.FC = () => {
     whiteSpace: 'nowrap' as const,
   });
 
-  const [y, mo] = selectedMonth ? selectedMonth.split('-') : ['', ''];
-  const monthLabel = selectedMonth ? `${y}年${parseInt(mo)}月` : '';
+  const rangeLabel = isRange
+    ? `${fmtMonth(startMonth <= endMonth ? startMonth : endMonth)} ~ ${fmtMonth(startMonth <= endMonth ? endMonth : startMonth)}`
+    : fmtMonth(endMonth || startMonth);
 
-  if (!selectedMonth) {
+  if (!endMonth) {
     return (
       <div style={{
         backgroundColor: '#1d2021', color: '#b8f53e', minHeight: '100vh',
@@ -193,7 +274,7 @@ const DataPage: React.FC = () => {
             DATA CENTER
           </h1>
           <div style={{ color: '#928374', fontSize: '12px', marginTop: '4px', fontFamily: "'Noto Sans TC', sans-serif" }}>
-            台灣機車市場即時數據分析平台 · {monthLabel}
+            台灣機車市場即時數據分析平台 · {rangeLabel}
           </div>
         </div>
 
@@ -209,22 +290,44 @@ const DataPage: React.FC = () => {
             $ <span style={{ color: '#b8f53e' }}>filter --interactive</span>
           </div>
 
-          {/* Row 1: Month + Brand */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#928374', fontSize: '11px' }}>月份</span>
-              <select
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(e.target.value)}
-                style={selectStyle}
+          {/* Row 1: Time Range */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
+            <span style={{ color: '#928374', fontSize: '11px' }}>區間</span>
+            {[
+              { id: '1', label: '單月' },
+              { id: '3', label: '近3月' },
+              { id: '6', label: '近6月' },
+              { id: '12', label: '近12月' },
+              { id: 'all', label: '全部' },
+            ].map(p => (
+              <button
+                key={p.id}
+                onClick={() => applyPreset(p.id)}
+                style={pillStyle(rangePreset === p.id)}
               >
-                {months.map(m => {
-                  const [yy, mm] = m.split('-');
-                  return <option key={m} value={m}>{yy}年{parseInt(mm)}月</option>;
-                })}
-              </select>
-            </div>
+                {p.label}
+              </button>
+            ))}
+            <div style={{ width: '1px', height: '20px', backgroundColor: '#3c3836', margin: '0 4px' }} />
+            <select
+              value={startMonth}
+              onChange={e => { setStartMonth(e.target.value); setRangePreset('custom'); }}
+              style={{ ...selectStyle, minWidth: '100px' }}
+            >
+              {months.map(m => <option key={m} value={m}>{fmtMonth(m)}</option>)}
+            </select>
+            <span style={{ color: '#928374', fontSize: '12px' }}>~</span>
+            <select
+              value={endMonth}
+              onChange={e => { setEndMonth(e.target.value); setRangePreset('custom'); }}
+              style={{ ...selectStyle, minWidth: '100px' }}
+            >
+              {months.map(m => <option key={m} value={m}>{fmtMonth(m)}</option>)}
+            </select>
+          </div>
 
+          {/* Row 2: Brand + Model */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: '#928374', fontSize: '11px' }}>品牌</span>
               <select
@@ -253,7 +356,7 @@ const DataPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Row 2: CC segments */}
+          {/* Row 3: CC segments */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ color: '#928374', fontSize: '11px', marginRight: '4px' }}>CC</span>
             {CC_SEGMENTS.map(seg => (
@@ -279,7 +382,7 @@ const DataPage: React.FC = () => {
             { label: 'TOTAL SALES', value: totalSales.toLocaleString(), sym: '>>' },
             { label: 'BRANDS', value: `${brandCount}`, sym: '>_' },
             { label: 'MODELS', value: `${modelCount}`, sym: '::' },
-            { label: 'MONTH', value: selectedMonth, sym: '$>' },
+            { label: 'PERIOD', value: isRange ? `${rangeMonthCount}個月` : fmtMonth(endMonth), sym: '$>' },
           ].map((s, i) => (
             <div key={i} style={{
               backgroundColor: '#282828',
@@ -294,6 +397,32 @@ const DataPage: React.FC = () => {
           ))}
         </div>
 
+        {/* Monthly Trend (only in range mode) */}
+        {isRange && monthlyTrend.length > 0 && (
+          <section style={{ marginBottom: '32px' }}>
+            <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
+              $ <span style={{ color: '#b8f53e' }}>trend --monthly{selectedBrand !== 'all' ? ` --brand=${selectedBrand}` : ''}{selectedCC !== 'all' ? ` --cc=${selectedCC}` : ''}</span>
+            </div>
+            <div style={{
+              backgroundColor: '#282828',
+              border: '1px solid #3c3836',
+              borderRadius: '4px',
+              padding: '20px',
+            }}>
+              <div style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '14px', marginBottom: '16px', letterSpacing: '1px' }}>
+                MONTHLY TREND · {rangeLabel}
+              </div>
+              <div style={{ fontSize: '12px', whiteSpace: 'pre', lineHeight: '2', fontFamily: "'JetBrains Mono', monospace" }}>
+                {monthlyTrend.map((t, i) => (
+                  <div key={i}>
+                    {`  ${fmtMonth(t.month).padEnd(10)} ${bar(t.sales, maxTrend, 28)} ${t.sales.toLocaleString().padStart(7)}`}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Brand Market Share */}
         <section style={{ marginBottom: '32px' }}>
           <div style={{ color: '#928374', fontSize: '12px', marginBottom: '12px' }}>
@@ -306,7 +435,7 @@ const DataPage: React.FC = () => {
             padding: '20px',
           }}>
             <div style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '14px', marginBottom: '16px', letterSpacing: '1px' }}>
-              BRAND MARKET SHARE · {monthLabel}
+              BRAND MARKET SHARE · {rangeLabel}
             </div>
             <div style={{ fontSize: '13px', whiteSpace: 'pre', lineHeight: '1.8', fontFamily: "'JetBrains Mono', monospace" }}>
               {brandSummary.length === 0 && <div style={{ color: '#928374' }}>  No data found.</div>}
@@ -333,9 +462,9 @@ const DataPage: React.FC = () => {
             overflowX: 'auto',
           }}>
             <div style={{ color: '#fabd2f', fontWeight: 'bold', fontSize: '14px', marginBottom: '16px', letterSpacing: '1px' }}>
-              VEHICLE SALES RANKING · {monthLabel}
+              VEHICLE SALES RANKING · {rangeLabel}
               <span style={{ color: '#928374', fontWeight: 400, fontSize: '11px', marginLeft: '12px' }}>
-                {filtered.length} models
+                {filtered.length} models{isRange ? ` · ${rangeMonthCount}個月累計` : ''}
               </span>
             </div>
 
