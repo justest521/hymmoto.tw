@@ -589,7 +589,7 @@ const DataPage: React.FC = () => {
   const brands = useMemo(() => {
     const map = new Map<string, number>();
     aggregatedData.forEach(r => map.set(r.brand, (map.get(r.brand) || 0) + r.total_sales));
-    return [...map.entries()].sort((a, b) => b[1] - a[1]).map(([b]) => b);
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([b]) => b);
   }, [aggregatedData]);
 
   const filtered = useMemo(() => {
