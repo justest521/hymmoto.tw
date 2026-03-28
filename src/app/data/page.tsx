@@ -1187,6 +1187,7 @@ const DataPage: React.FC = () => {
                 { href: '/rankings/brands', sym: '/^', label: 'brands/', desc: '品牌分析' },
                 { href: '/rankings/segments', sym: '##', label: 'segments/', desc: '級距分析' },
                 { href: '/data/brands', sym: '::', label: 'brand-data/', desc: '品牌資料' },
+                { href: '/game', sym: '>>>', label: 'moto-garage/', desc: '機車改裝遊戲' },
               ].map((link, i) => (
                 <Link key={i} href={link.href} style={{
                   backgroundColor: '#282828', border: '1px solid #3c3836', borderRadius: '4px',
