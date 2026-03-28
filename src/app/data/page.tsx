@@ -27,6 +27,7 @@ interface VmsRow {
   total_sales: number;
   displacement: string | null;
   displacement_cc: number | null;
+  category: string | null;
 }
 
 interface BrandMonthly {
@@ -38,12 +39,15 @@ interface BrandMonthly {
 
 const CC_SEGMENTS = [
   { id: 'all', label: '全部' },
-  { id: 'ev', label: '電動', match: (d: string | null) => d === '電動機車' },
-  { id: '50', label: '≤50cc', match: (d: string | null) => d === '50cc以下' },
-  { id: '125', label: '51-125', match: (d: string | null) => d === '50-125cc' },
-  { id: '250', label: '126-250', match: (d: string | null) => d === '126-250cc' },
-  { id: '550', label: '251-550', match: (d: string | null) => d === '251-550cc' },
-  { id: '551', label: '551cc+', match: (d: string | null) => d === '551cc以上' },
+  { id: '50', label: '50', match: (c: string | null) => c === '50' },
+  { id: '90', label: '100', match: (c: string | null) => c === '90' },
+  { id: '125', label: '125', match: (c: string | null) => c === '125' },
+  { id: '150', label: '150', match: (c: string | null) => c === '150' },
+  { id: '180', label: '180', match: (c: string | null) => c === '180' },
+  { id: '250', label: '250(白牌)', match: (c: string | null) => c === '250(白牌)' },
+  { id: 'yellow', label: '黃牌', match: (c: string | null) => c === '黃牌' },
+  { id: 'red', label: '紅牌', match: (c: string | null) => c === '紅牌' },
+  { id: 'ev', label: '電動', match: (c: string | null) => c === '電動' },
 ];
 
 function fmtMonth(m: string): string {
@@ -554,7 +558,7 @@ const DataPage: React.FC = () => {
       const to = startMonth <= endMonth ? endMonth : startMonth;
       const { data } = await supabase
         .from('vehicle_monthly_sales')
-        .select('year_month, brand, model_code, display_name, total_sales, displacement, displacement_cc')
+        .select('year_month, brand, model_code, display_name, total_sales, displacement, displacement_cc, category')
         .gte('year_month', from)
         .lte('year_month', to)
         .gt('total_sales', 0)
@@ -591,7 +595,7 @@ const DataPage: React.FC = () => {
     if (selectedBrand !== 'all') d = d.filter(r => r.brand === selectedBrand);
     if (selectedCC !== 'all') {
       const seg = CC_SEGMENTS.find(s => s.id === selectedCC);
-      if (seg?.match) d = d.filter(r => seg.match!(r.displacement));
+      if (seg?.match) d = d.filter(r => seg.match!(r.category));
     }
     if (searchModel.trim()) {
       const q = searchModel.trim().toLowerCase();
@@ -666,7 +670,7 @@ const DataPage: React.FC = () => {
 
   const ccSummary = useMemo(() => {
     return CC_SEGMENTS.filter(s => s.id !== 'all').map(seg => {
-      const rows = filtered.filter(r => seg.match!(r.displacement));
+      const rows = filtered.filter(r => seg.match!(r.category));
       const total = rows.reduce((s, r) => s + r.total_sales, 0);
       const top = rows[0];
       return {
@@ -687,7 +691,7 @@ const DataPage: React.FC = () => {
     if (selectedBrand !== 'all') d = d.filter(r => r.brand === selectedBrand);
     if (selectedCC !== 'all') {
       const seg = CC_SEGMENTS.find(s => s.id === selectedCC);
-      if (seg?.match) d = d.filter(r => seg.match!(r.displacement));
+      if (seg?.match) d = d.filter(r => seg.match!(r.category));
     }
     d.forEach(r => map.set(r.year_month, (map.get(r.year_month) || 0) + r.total_sales));
     return rangeMonths.map(m => ({ month: m, sales: map.get(m) || 0 }));
