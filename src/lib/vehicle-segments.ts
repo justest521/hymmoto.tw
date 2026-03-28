@@ -24,15 +24,15 @@ export interface SegmentEntry {
 
 /** All known segment labels, ordered by market size */
 export const SEGMENT_LABELS: { id: VehicleSegment; label: string; desc: string }[] = [
-  { id: '入門125', label: '入門125', desc: '國民代步車款 (勁豪、活力、GP125...)' },
-  { id: '高階150', label: '高階150', desc: '運動/旗艦速克達 (DRG II、Cygnus XR、KRV...)' },
-  { id: '高階125', label: '高階125', desc: '運動型125 (勁戰、Jet SL、BWS...)' },
-  { id: '大型速克達', label: '大型速克達', desc: '黃紅牌速克達 (TMAX、XMAX、AK575...)' },
-  { id: 'PBGN', label: 'PBGN', desc: 'Powered by Gogoro Network 換電聯盟' },
-  { id: '電動機車', label: '電動機車', desc: 'Gogoro 自有品牌電動車' },
-  { id: '商用速克達', label: '商用速克達', desc: '商用/外送車款 (4MICA、大樂、金牌...)' },
-  { id: '小型125', label: '小型125', desc: '輕巧車身125 (Z1 Attila、Rs Neo、VJR...)' },
   { id: '入門100', label: '入門100', desc: '100-115cc入門款 (Woo 115、Nice XL...)' },
+  { id: '入門125', label: '入門125', desc: '國民代步車款 (勁豪、活力、GP125...)' },
+  { id: '小型125', label: '小型125', desc: '輕巧車身125 (Z1 Attila、Rs Neo、VJR...)' },
+  { id: '高階125', label: '高階125', desc: '運動型125 (勁戰、Jet SL、BWS...)' },
+  { id: '高階150', label: '高階150', desc: '運動/旗艦速克達 (DRG II、Cygnus XR、KRV...)' },
+  { id: '商用速克達', label: '商用速克達', desc: '商用/外送車款 (4MICA、大樂、金牌...)' },
+  { id: '大型速克達', label: '大型速克達', desc: '黃紅牌速克達 (TMAX、XMAX、AK575...)' },
+  { id: '電動機車', label: '電動機車', desc: 'Gogoro 自有品牌電動車' },
+  { id: 'PBGN', label: 'PBGN', desc: 'Powered by Gogoro Network 換電聯盟' },
 ];
 
 /** Complete model → segment mapping */

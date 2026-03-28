@@ -913,14 +913,14 @@ const DataPage: React.FC = () => {
                   style={{ ...selectStyle, flex: 1, color: '#ebdbb2' }} />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ color: '#928374', fontSize: '11px', marginRight: '4px' }}>CC</span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ color: '#928374', fontSize: '11px', width: '28px', flexShrink: 0 }}>CC</span>
               {CC_SEGMENTS.map(seg => (
                 <button key={seg.id} onClick={() => setSelectedCC(seg.id)} style={pillStyle(selectedCC === seg.id)}>{seg.label}</button>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ color: '#928374', fontSize: '11px', marginRight: '4px' }}>標籤</span>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ color: '#928374', fontSize: '11px', width: '28px', flexShrink: 0 }}>標籤</span>
               <button onClick={() => setSelectedSegment('all')} style={pillStyle(selectedSegment === 'all')}>全部</button>
               {SEGMENT_LABELS.map(s => (
                 <button key={s.id} onClick={() => setSelectedSegment(s.id)} style={pillStyle(selectedSegment === s.id)}>{s.label}</button>
