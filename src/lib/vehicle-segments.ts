@@ -11,6 +11,7 @@ export type VehicleSegment =
   | '小型125'
   | '高階125'
   | '高階150'
+  | '進口輕檔車'
   | '商用速克達'
   | '大型速克達'
   | '電動機車'
@@ -29,6 +30,7 @@ export const SEGMENT_LABELS: { id: VehicleSegment; label: string; desc: string }
   { id: '小型125', label: '小型125', desc: '輕巧車身125 (Z1 Attila、Rs Neo、VJR...)' },
   { id: '高階125', label: '高階125', desc: '運動型125 (勁戰、Jet SL、BWS...)' },
   { id: '高階150', label: '高階150', desc: '運動/旗艦速克達 (DRG II、Cygnus XR、KRV...)' },
+  { id: '進口輕檔車', label: '進口輕檔車', desc: '進口打檔車 (R15、MT-15、CBR150R、GSX-R150...)' },
   { id: '商用速克達', label: '商用速克達', desc: '商用/外送車款 (4MICA、大樂、金牌...)' },
   { id: '大型速克達', label: '大型速克達', desc: '黃紅牌速克達 (TMAX、XMAX、AK575...)' },
   { id: '電動機車', label: '電動機車', desc: 'Gogoro 自有品牌電動車' },
@@ -88,6 +90,20 @@ export const VEHICLE_SEGMENT_MAP: SegmentEntry[] = [
   { segment: '高階150', brand: 'KYMCO', modelName: 'RTS R 165' },
   { segment: '高階150', brand: 'KYMCO', modelName: 'RCS MOTO' },
   { segment: '高階150', brand: 'KYMCO', modelName: 'ST 250' },
+
+  // ═══ 進口輕檔車 ═══
+  { segment: '進口輕檔車', brand: 'YAMAHA', modelName: 'YZF-R15' },
+  { segment: '進口輕檔車', brand: 'YAMAHA', modelName: 'R15M' },
+  { segment: '進口輕檔車', brand: 'YAMAHA', modelName: 'MT-15' },
+  { segment: '進口輕檔車', brand: 'YAMAHA', modelName: 'XSR155' },
+  { segment: '進口輕檔車', brand: 'HONDA', modelName: 'CBR150R' },
+  { segment: '進口輕檔車', brand: 'HONDA', modelName: 'CB200X' },
+  { segment: '進口輕檔車', brand: 'HONDA', modelName: 'CRF150' },
+  { segment: '進口輕檔車', brand: 'HONDA', modelName: 'CB150R' },
+  { segment: '進口輕檔車', brand: 'SUZUKI', modelName: 'GSX-R150' },
+  { segment: '進口輕檔車', brand: 'SUZUKI', modelName: 'GSX-S150' },
+  { segment: '進口輕檔車', brand: 'BENELLI', modelName: 'TNT 135' },
+  { segment: '進口輕檔車', brand: 'BENELLI', modelName: 'Leoncino 250' },
 
   // ═══ 商用速克達 ═══
   { segment: '商用速克達', brand: 'SYM', modelName: '4MICA 125 / ABS' },
