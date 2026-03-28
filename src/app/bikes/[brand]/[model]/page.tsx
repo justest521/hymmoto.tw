@@ -69,31 +69,32 @@ const ModelPage = () => {
       const supabase = createClient();
 
       try {
-        let { data: vehicleData, error } = await supabase
+        let { data: vehicleRows, error } = await supabase
           .from('vehicle_specs')
           .select('*')
           .ilike('brand', decodedBrand)
           .ilike('model_name', decodedModel)
-          .single();
+          .order('id', { ascending: true })
+          .limit(1);
 
-        if (error && error.code === 'PGRST116') {
-          const { data: fallbackData, error: fallbackError } = await supabase
+        let vehicleData = vehicleRows?.[0] ?? null;
+
+        if (!vehicleData) {
+          const { data: fallbackRows } = await supabase
             .from('vehicle_specs')
             .select('*')
             .ilike('brand', decodedBrand)
             .ilike('model_name', `%${decodedModel}%`)
-            .single();
+            .order('id', { ascending: true })
+            .limit(1);
 
-          if (fallbackError) {
+          vehicleData = fallbackRows?.[0] ?? null;
+
+          if (!vehicleData) {
             setNotFound(true);
             setLoading(false);
             return;
           }
-          vehicleData = fallbackData;
-        } else if (error) {
-          setNotFound(true);
-          setLoading(false);
-          return;
         }
 
         setVehicle(vehicleData);
