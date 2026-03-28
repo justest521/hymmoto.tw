@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase';
+import { getSegment, SEGMENT_LABELS, type VehicleSegment } from '@/lib/vehicle-segments';
 
 function bar(value: number, max: number, width: number = 20): string {
   if (max === 0) return '░'.repeat(width);
@@ -40,7 +41,7 @@ interface BrandMonthly {
 const CC_SEGMENTS = [
   { id: 'all', label: '全部' },
   { id: '50', label: '50', match: (c: string | null) => c === '50' },
-  { id: '90', label: '100', match: (c: string | null) => c === '90' },
+  { id: '100', label: '100', match: (c: string | null) => c === '100' },
   { id: '125', label: '125', match: (c: string | null) => c === '125' },
   { id: '150', label: '150', match: (c: string | null) => c === '150' },
   { id: '180', label: '180', match: (c: string | null) => c === '180' },
@@ -473,6 +474,7 @@ const DataPage: React.FC = () => {
   const [endMonth, setEndMonth] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [selectedCC, setSelectedCC] = useState('all');
+  const [selectedSegment, setSelectedSegment] = useState<'all' | VehicleSegment>('all');
   const [searchModel, setSearchModel] = useState('');
   const [loading, setLoading] = useState(true);
   const [rangePreset, setRangePreset] = useState('1');
@@ -597,12 +599,18 @@ const DataPage: React.FC = () => {
       const seg = CC_SEGMENTS.find(s => s.id === selectedCC);
       if (seg?.match) d = d.filter(r => seg.match!(r.category));
     }
+    if (selectedSegment !== 'all') {
+      d = d.filter(r => {
+        const name = r.display_name || r.model_code || '';
+        return getSegment(name) === selectedSegment;
+      });
+    }
     if (searchModel.trim()) {
       const q = searchModel.trim().toLowerCase();
       d = d.filter(r => (r.display_name || '').toLowerCase().includes(q) || (r.model_code || '').toLowerCase().includes(q));
     }
     return d;
-  }, [aggregatedData, selectedBrand, selectedCC, searchModel]);
+  }, [aggregatedData, selectedBrand, selectedCC, selectedSegment, searchModel]);
 
   const totalSales = filtered.reduce((s, r) => s + r.total_sales, 0);
   const brandCount = new Set(filtered.map(r => r.brand)).size;
@@ -693,9 +701,15 @@ const DataPage: React.FC = () => {
       const seg = CC_SEGMENTS.find(s => s.id === selectedCC);
       if (seg?.match) d = d.filter(r => seg.match!(r.category));
     }
+    if (selectedSegment !== 'all') {
+      d = d.filter(r => {
+        const name = r.display_name || r.model_code || '';
+        return getSegment(name) === selectedSegment;
+      });
+    }
     d.forEach(r => map.set(r.year_month, (map.get(r.year_month) || 0) + r.total_sales));
     return rangeMonths.map(m => ({ month: m, sales: map.get(m) || 0 }));
-  }, [allData, months, startMonth, endMonth, isRange, selectedBrand, selectedCC]);
+  }, [allData, months, startMonth, endMonth, isRange, selectedBrand, selectedCC, selectedSegment]);
 
   const maxTrend = Math.max(...monthlyTrend.map(t => t.sales), 1);
 
@@ -903,6 +917,13 @@ const DataPage: React.FC = () => {
               <span style={{ color: '#928374', fontSize: '11px', marginRight: '4px' }}>CC</span>
               {CC_SEGMENTS.map(seg => (
                 <button key={seg.id} onClick={() => setSelectedCC(seg.id)} style={pillStyle(selectedCC === seg.id)}>{seg.label}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ color: '#928374', fontSize: '11px', marginRight: '4px' }}>標籤</span>
+              <button onClick={() => setSelectedSegment('all')} style={pillStyle(selectedSegment === 'all')}>全部</button>
+              {SEGMENT_LABELS.map(s => (
+                <button key={s.id} onClick={() => setSelectedSegment(s.id)} style={pillStyle(selectedSegment === s.id)}>{s.label}</button>
               ))}
             </div>
           </div>
