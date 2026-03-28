@@ -281,22 +281,40 @@ const ModelPage = () => {
             overflow: 'hidden',
           }}
         >
-          <VehicleVisual
-            brand={vehicle.brand}
-            modelName={vehicle.model_name}
-            cc={vehicle.displacement_cc}
-            hp={parseHP(vehicle.max_horsepower)}
-            weight={vehicle.wet_weight_kg}
-            price={vehicle.msrp}
-            category={vehicle.category}
-            seatHeight={vehicle.seat_height_mm}
-            engineType={vehicle.engine_type}
-            cooling={vehicle.cooling_system}
-            fuelTank={vehicle.fuel_tank_l}
-            accentColor="#b8f53e"
-            width={500}
-            height={250}
-          />
+          {vehicle.image_url ? (
+            <img
+              src={vehicle.image_url}
+              alt={`${vehicle.brand} ${vehicle.model_name}`}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'block';
+              }}
+            />
+          ) : null}
+          <div style={{ display: vehicle.image_url ? 'none' : 'block' }}>
+            <VehicleVisual
+              brand={vehicle.brand}
+              modelName={vehicle.model_name}
+              cc={vehicle.displacement_cc}
+              hp={parseHP(vehicle.max_horsepower)}
+              weight={vehicle.wet_weight_kg}
+              price={vehicle.msrp}
+              category={vehicle.category}
+              seatHeight={vehicle.seat_height_mm}
+              engineType={vehicle.engine_type}
+              cooling={vehicle.cooling_system}
+              fuelTank={vehicle.fuel_tank_l}
+              accentColor="#b8f53e"
+              width={500}
+              height={250}
+            />
+          </div>
         </div>
         <h1 style={{ fontFamily: "'Orbitron', monospace", fontSize: '36px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#ebdbb2', letterSpacing: '2px' }}>
           {vehicle.model_name}

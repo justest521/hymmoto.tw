@@ -12,6 +12,7 @@ interface Vehicle {
   max_horsepower: string | null;
   msrp: number | null;
   category: string | null;
+  image_url: string | null;
 }
 
 type TabType = 'brand' | 'displacement' | 'price' | 'type';
@@ -44,7 +45,7 @@ const BikesPage = () => {
 
       const { data } = await supabase
         .from('vehicle_specs')
-        .select('id, brand, model_name, displacement_cc, max_horsepower, msrp, category')
+        .select('id, brand, model_name, displacement_cc, max_horsepower, msrp, category, image_url')
         .order('created_at', { ascending: false });
 
       if (data) {
@@ -342,6 +343,33 @@ const BikesPage = () => {
                     e.currentTarget.style.backgroundColor = '#282828';
                   }}
                 >
+                  {v.image_url && (
+                    <div style={{
+                      width: '100%',
+                      height: '120px',
+                      marginBottom: '10px',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                      backgroundColor: '#1d2021',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <img
+                        src={v.image_url}
+                        alt={`${v.brand} ${v.model_name}`}
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain',
+                        }}
+                        onError={(e) => {
+                          (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <span style={{
                       backgroundColor: '#b8f53e',
