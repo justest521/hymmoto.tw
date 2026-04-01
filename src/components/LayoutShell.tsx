@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, type ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import SearchBar from '@/components/SearchBar';
 
 const navItems = [
   { sym: '~/', label: 'HOME', chinese: '首頁', href: '/' },
@@ -164,6 +165,13 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           })}
         </nav>
 
+        {/* Sidebar search (desktop only) */}
+        {!isMobile && !collapsed && (
+          <div style={{ padding: '10px 12px', borderTop: '1px solid #3c3836' }}>
+            <SearchBar compact placeholder="搜尋..." />
+          </div>
+        )}
+
         {/* Footer */}
         {(!collapsed || isMobile) && (
           <div style={{
@@ -179,31 +187,52 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
   );
 }
 
-// Mobile top bar with hamburger
+// Mobile top bar with hamburger + search
 function MobileHeader({ onMenuClick }: { onMenuClick: () => void }) {
+  const router = useRouter();
+  const [showSearch, setShowSearch] = useState(false);
+
   return (
     <header style={{
       position: 'sticky', top: 0,
-      height: '48px',
       backgroundColor: '#1d2021',
       borderBottom: '1px solid #3c3836',
-      display: 'flex', alignItems: 'center',
-      padding: '0 12px',
       zIndex: 30,
       fontFamily: "'JetBrains Mono', monospace",
     }}>
-      <button onClick={onMenuClick} style={{
-        background: 'transparent', border: 'none', cursor: 'pointer',
-        color: '#b8f53e', fontSize: '20px', padding: '4px 8px',
-        display: 'flex', alignItems: 'center',
-      }}>
-        ☰
-      </button>
-      <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: '#fabd2f', letterSpacing: '1px' }}>HYM</span>
-        <span style={{ fontSize: '13px', fontWeight: 700, color: '#b8f53e', letterSpacing: '1px' }}>MOTO</span>
-        <span style={{ fontSize: '10px', color: '#928374' }}>.TW</span>
-      </Link>
+      <div style={{ height: '48px', display: 'flex', alignItems: 'center', padding: '0 12px' }}>
+        <button onClick={onMenuClick} style={{
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          color: '#b8f53e', fontSize: '20px', padding: '4px 8px',
+          display: 'flex', alignItems: 'center', flexShrink: 0,
+        }}>
+          ☰
+        </button>
+        <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px', flex: 1 }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#fabd2f', letterSpacing: '1px' }}>HYM</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: '#b8f53e', letterSpacing: '1px' }}>MOTO</span>
+          <span style={{ fontSize: '10px', color: '#928374' }}>.TW</span>
+        </Link>
+        <button
+          onClick={() => setShowSearch(!showSearch)}
+          style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: showSearch ? '#b8f53e' : '#928374', fontSize: '16px', padding: '4px 8px',
+            flexShrink: 0,
+          }}
+        >
+          ⌕
+        </button>
+      </div>
+      {showSearch && (
+        <div style={{ padding: '0 12px 10px 12px' }}>
+          <SearchBar
+            compact
+            placeholder="搜尋車款..."
+            onSearch={(q) => { setShowSearch(false); router.push(`/search?q=${encodeURIComponent(q)}`); }}
+          />
+        </div>
+      )}
     </header>
   );
 }

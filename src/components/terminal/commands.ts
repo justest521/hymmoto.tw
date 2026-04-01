@@ -186,9 +186,10 @@ Example: brand yamaha`)
 
   search: (args: string[]) => {
     if (args.length === 0) {
-      return text('Usage: search [keyword]\nExample: search ninja')
+      return nav('Redirecting to search page...', '/search')
     }
-    return text(`Searching for "${args.join(' ')}"...\nFull search available in vehicle database.\nType 'bikes' to enter.`)
+    const kw = args.join(' ')
+    return nav(`Searching for "${kw}"...`, `/search?q=${encodeURIComponent(kw)}`)
   },
 
   stats: () => text(`
